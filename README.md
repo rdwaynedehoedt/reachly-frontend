@@ -1,52 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Reachly - Email Outreach Automation Platform
 
-## Getting Started
+Reachly is a smart email outreach automation platform designed to help businesses and professionals streamline their communication efforts. The platform enables users to securely sign in using enterprise-grade authentication (Asgardeo), connect multiple email accounts via IMAP/SMTP, and manage personalized email campaigns efficiently.
 
-First, run the development server:
+## Project Structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+This project consists of two main parts:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. **Backend (Node.js/Express)**: Authentication and API services
+2. **Frontend (Next.js)**: User interface and client-side application
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Prerequisites
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Node.js (v16+)
+- npm or yarn
+- Asgardeo account with a configured application
 
-## Tailwind CSS Setup
+## Setup Instructions
 
-This project is pre-configured with [Tailwind CSS](https://tailwindcss.com/):
+### Backend Setup
 
-- **Installation:** Tailwind CSS and its PostCSS plugin are installed as dev dependencies.
-- **Configuration:**
-  - Tailwind is referenced in `postcss.config.mjs` via the `@tailwindcss/postcss` plugin.
-  - Tailwind's base styles are imported in `src/app/globals.css` using `@import "tailwindcss";`.
-- **Note:** The Tailwind config file (`tailwind.config.js` or `tailwind.config.ts`) is currently missing. If you need to customize Tailwind (themes, plugins, etc.), create it with:
+1. Navigate to the backend directory:
+   ```
+   cd reachly-Backend
+   ```
 
-```bash
-npx tailwindcss init --ts
-```
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-For more details, see the [Tailwind CSS documentation](https://tailwindcss.com/docs/configuration).
+3. Create a `.env` file in the backend directory with the following content:
+   ```
+   # Asgardeo Configuration
+   ASGARDEO_ORGANISATION=your-organization-name
+   ASGARDEO_CLIENT_ID=your-client-id
+   ASGARDEO_CLIENT_SECRET=your-client-secret
 
-## Learn More
+   # Server Configuration
+   PORT=3001
+   CORS_ORIGIN=http://localhost:3000
+   SESSION_SECRET=your-session-secret
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. Start the backend server:
+   ```
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Frontend Setup
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Navigate to the frontend directory:
+   ```
+   cd reachly-frontend
+   ```
 
-## Deploy on Vercel
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+3. Create a `.env.local` file in the frontend directory with the following content:
+   ```
+   NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=your-nextauth-secret
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+4. Start the frontend development server:
+   ```
+   npm run dev
+   ```
+
+5. Open your browser and navigate to `http://localhost:3000`
+
+## Asgardeo Configuration
+
+To configure Asgardeo for this application:
+
+1. Sign up for an Asgardeo account at https://wso2.com/asgardeo/
+2. Create a new application
+3. Configure the following redirect URLs:
+   - `http://localhost:3001/auth/callback` (Backend callback)
+   - `http://localhost:3000` (Frontend redirect after login)
+4. Obtain the Client ID and Client Secret
+5. Update your `.env` files with these credentials
+
+## Features
+
+- Secure user authentication with Asgardeo
+- Email account integration (Gmail, Outlook, any IMAP/SMTP)
+- Campaign creation and management
+- Contact management
+- Email tracking and analytics
+- User dashboard
+
+## Development
+
+This project uses:
+
+- Express.js for the backend API
+- Next.js for the frontend
+- NextAuth.js for authentication flow
+- Tailwind CSS for styling 
