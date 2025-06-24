@@ -36,14 +36,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuthStatus = async () => {
     try {
       setIsLoading(true);
+      console.log("Checking auth status with backend URL:", process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000");
+      
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/auth/user`,
         {
           credentials: "include",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+          },
+          mode: "cors"
         }
       );
 
+      console.log("Auth status response:", response.status);
+      
       const data = await response.json();
+      console.log("Auth status data:", data);
+      
       if (data.success && data.isAuthenticated) {
         setUser(data.user);
         setIsAuthenticated(true);
