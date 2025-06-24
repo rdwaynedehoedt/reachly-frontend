@@ -7,8 +7,12 @@ export default function SignIn() {
   useEffect(() => {
     const handleSignIn = async () => {
       try {
+        // Get the backend URL
+        const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+        console.log("Redirecting to backend login URL:", `${backendUrl}/auth/login`);
+        
         // Directly redirect to the backend login URL
-        window.location.href = `${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/auth/login`;
+        window.location.href = `${backendUrl}/auth/login`;
       } catch (error) {
         console.error("Error during sign in:", error);
       }
