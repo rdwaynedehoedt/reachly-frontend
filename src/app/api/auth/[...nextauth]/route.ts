@@ -1,25 +1,15 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import { NextRequest, NextResponse } from "next/server";
 
-// Create a simple NextAuth configuration
-export const authOptions = {
-  providers: [
-    CredentialsProvider({
-      id: "asgardeo-login",
-      name: "Asgardeo",
-      credentials: {},
-      async authorize() {
-        // This function is just a placeholder - we'll redirect before it's called
-        return null;
-      },
-    }),
-  ],
-  pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
-  },
-};
+// Simple placeholder GET handler
+export async function GET(request: NextRequest) {
+  return NextResponse.json({ 
+    message: "Authentication API is not implemented directly in Next.js. Using backend authentication instead." 
+  });
+}
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST }; 
+// Simple placeholder POST handler
+export async function POST(request: NextRequest) {
+  return NextResponse.json({ 
+    message: "Authentication API is not implemented directly in Next.js. Using backend authentication instead." 
+  });
+} 
