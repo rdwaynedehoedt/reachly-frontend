@@ -6,6 +6,7 @@ import Image from "next/image";
 export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
   const [loginMethod, setLoginMethod] = useState<'standard' | 'simple'>('standard');
+  const [debugInfo, setDebugInfo] = useState<any>(null);
 
   useEffect(() => {
     const handleSignIn = async () => {
@@ -19,9 +20,20 @@ export default function SignIn() {
         
         // Determine which login route to use
         const loginRoute = loginMethod === 'simple' ? '/auth/login-simple' : '/auth/login';
-        const loginUrl = `${baseUrl}${loginRoute}`;
+        
+        // Make sure we have the full path
+        let loginUrl = `${baseUrl}${loginRoute}`;
+        
+        // For Choreo URLs, make sure we have the full path
+        if (baseUrl.includes('choreoapis.dev') && !loginUrl.includes('/reachly/reachly-backend/v1.0/auth')) {
+          // If the URL doesn't already contain the path, add it
+          if (!baseUrl.includes('/reachly/reachly-backend/v1.0')) {
+            loginUrl = `${baseUrl}/reachly/reachly-backend/v1.0${loginRoute}`;
+          }
+        }
         
         console.log(`Redirecting to backend login URL: ${loginUrl}`);
+        setDebugInfo({ backendUrl, baseUrl, loginUrl });
         
         // Directly redirect to the backend login URL
         window.location.href = loginUrl;
@@ -43,6 +55,11 @@ export default function SignIn() {
       {error ? (
         <div className="bg-red-50 p-4 rounded-md mb-4">
           <p className="text-red-800">{error}</p>
+          {debugInfo && (
+            <div className="mt-2 p-2 bg-gray-100 text-xs overflow-auto max-w-full">
+              <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
+            </div>
+          )}
           <button 
             onClick={() => window.location.reload()}
             className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md"
