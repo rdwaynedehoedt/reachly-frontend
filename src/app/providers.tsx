@@ -1,6 +1,5 @@
 "use client";
 
-import { SessionProvider } from "next-auth/react";
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 
 // Define user type

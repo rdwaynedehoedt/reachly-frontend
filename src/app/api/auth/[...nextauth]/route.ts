@@ -1,14 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-// Define custom types to include redirectUrl
-interface CustomUser {
-  id: string;
-  name?: string;
-  email?: string;
-  redirectUrl?: string;
-}
-
 // Create a simple NextAuth configuration
 export const authOptions = {
   providers: [
