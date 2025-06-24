@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 
 export default function SignIn() {
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     const handleSignIn = async () => {
       try {
@@ -15,6 +17,7 @@ export default function SignIn() {
         window.location.href = `${backendUrl}/auth/login`;
       } catch (error) {
         console.error("Error during sign in:", error);
+        setError("Failed to redirect to login page. Please try again.");
       }
     };
     
@@ -23,15 +26,27 @@ export default function SignIn() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
-      <div className="relative w-32 h-32">
-        <Image
-          src="/png-animated-unscreen.gif"
-          alt="Loading animation"
-          fill
-          style={{ objectFit: "contain" }}
-          priority
-        />
-      </div>
+      {error ? (
+        <div className="bg-red-50 p-4 rounded-md mb-4">
+          <p className="text-red-800">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md"
+          >
+            Try Again
+          </button>
+        </div>
+      ) : (
+        <div className="relative w-32 h-32">
+          <Image
+            src="/png-animated-unscreen.gif"
+            alt="Loading animation"
+            fill
+            style={{ objectFit: "contain" }}
+            priority
+          />
+        </div>
+      )}
     </div>
   );
 } 

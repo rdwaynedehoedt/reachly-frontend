@@ -1,109 +1,65 @@
 "use client";
 
+import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useAuth } from "@/app/providers";
-import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import { performLogout } from "@/utils/logoutUtils";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const pathname = usePathname();
+  const { user } = useAuth();
   const router = useRouter();
-  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Define navigation items
-  const navItems = [
-    { name: "Dashboard", href: "/", requireAuth: true },
-    { name: "Campaigns", href: "/campaigns", requireAuth: true },
-    { name: "Contacts", href: "/contacts", requireAuth: true },
-    { name: "Settings", href: "/settings", requireAuth: true },
-  ];
-
-  // Filter navigation items based on authentication status
-  const filteredNavItems = navItems.filter(
-    (item) => !item.requireAuth || isAuthenticated
-  );
-
-  // Handle sign out directly from navbar
   const handleSignOut = async () => {
-    setIsSigningOut(true);
     try {
-      console.log("Navbar: Starting logout process");
+      setIsLoggingOut(true);
       const result = await performLogout();
       
-      console.log("Navbar: Logout result", result);
-      
       if (result.success && result.logoutUrl) {
-        console.log(`Navbar: Redirecting directly to IdP logout URL: ${result.logoutUrl}`);
-        // Redirect directly to the Asgardeo logout URL
         window.location.href = result.logoutUrl;
       } else {
-        console.error("Navbar: Sign out failed:", result.error);
-        setIsSigningOut(false);
-        // Fallback to sign-out page on error
-        router.push("/auth/sign-out");
+        console.error("Logout failed:", result.error);
+        router.push("/auth/signin");
       }
     } catch (error) {
-      console.error("Navbar: Error during sign out:", error);
-      setIsSigningOut(false);
-      // Fallback to sign-out page on error
-      router.push("/auth/sign-out");
+      console.error("Error during sign out:", error);
+      router.push("/auth/signin");
     }
   };
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
+    <nav className="bg-white shadow">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="text-xl font-bold text-blue-600">
-                Reachly
+              <Link href="/">
+                <Image
+                  src="/logo with no background.png"
+                  alt="Reachly Logo"
+                  width={120}
+                  height={40}
+                  className="h-8 w-auto"
+                />
               </Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {filteredNavItems.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`${
-                    pathname === item.href
-                      ? "border-blue-500 text-gray-900"
-                      : "border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700"
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                >
-                  {item.name}
-                </Link>
-              ))}
             </div>
           </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            {isLoading ? (
-              <div className="h-8 w-8 rounded-full bg-gray-200 animate-pulse"></div>
-            ) : isAuthenticated ? (
-              <div className="flex items-center">
-                <span className="text-sm text-gray-700 mr-4">
-                  {user?.givenName || user?.username}
-                </span>
-                <button
-                  onClick={handleSignOut}
-                  disabled={isSigningOut}
-                  className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 ${
-                    isSigningOut ? "opacity-75 cursor-not-allowed" : ""
-                  }`}
-                >
-                  {isSigningOut ? "Signing Out..." : "Sign Out"}
-                </button>
-              </div>
-            ) : (
-              <Link
-                href="/auth/signin"
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          
+          <div className="flex items-center">
+            <div className="flex items-center">
+              <span className="text-gray-700 mr-4">
+                {user?.givenName || user?.username}
+              </span>
+              <button
+                onClick={handleSignOut}
+                disabled={isLoggingOut}
+                className="ml-4 px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
               >
-                Sign In
-              </Link>
-            )}
+                {isLoggingOut ? "Signing Out..." : "Sign Out"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
