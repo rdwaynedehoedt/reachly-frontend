@@ -12,13 +12,19 @@ export default function SignIn() {
       try {
         // Get the backend URL
         const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000";
+        console.log("Backend URL:", backendUrl);
+        
+        // Make sure the backend URL doesn't end with a slash
+        const baseUrl = backendUrl.endsWith('/') ? backendUrl.slice(0, -1) : backendUrl;
         
         // Determine which login route to use
         const loginRoute = loginMethod === 'simple' ? '/auth/login-simple' : '/auth/login';
-        console.log(`Redirecting to backend login URL: ${backendUrl}${loginRoute}`);
+        const loginUrl = `${baseUrl}${loginRoute}`;
+        
+        console.log(`Redirecting to backend login URL: ${loginUrl}`);
         
         // Directly redirect to the backend login URL
-        window.location.href = `${backendUrl}${loginRoute}`;
+        window.location.href = loginUrl;
       } catch (error) {
         console.error("Error during sign in:", error);
         setError("Failed to redirect to login page. Please try again.");
