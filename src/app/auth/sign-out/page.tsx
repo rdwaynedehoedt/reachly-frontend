@@ -3,38 +3,46 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { performLogout } from "@/utils/logoutUtils";
 
 export default function SignOut() {
   const router = useRouter();
   const [error, setError] = useState("");
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const logout = async () => {
       try {
-        // Call the backend logout endpoint
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000"}/auth/logout`, {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        const data = await response.json();
+        console.log("Sign-out page: Starting logout process");
+        const result = await performLogout();
         
-        if (data.success) {
-          // Redirect to Asgardeo logout URL
-          window.location.href = data.logoutUrl;
+        console.log("Sign-out page: Logout result", result);
+        
+        if (result.success && result.logoutUrl) {
+          // Show debug info before redirecting
+          setDebugInfo(`Redirecting to: ${result.logoutUrl}`);
+          console.log(`Sign-out page: Redirecting to ${result.logoutUrl}`);
+          
+          // Short delay to allow console logs to be seen
+          setTimeout(() => {
+            // Redirect to Asgardeo logout URL to complete the IdP logout
+            window.location.href = result.logoutUrl as string;
+          }, 500);
         } else {
-          setError("Failed to logout");
-          // Redirect to login page after 3 seconds even if there was an error
+          const errorMsg = result.error || "Failed to logout";
+          setError(errorMsg);
+          console.error("Sign-out page: Logout failed:", errorMsg);
+          
+          // Redirect to login page after 3 seconds if there was an error
           setTimeout(() => {
             router.push("/auth/signin");
           }, 3000);
         }
       } catch (err) {
-        setError("An error occurred during logout");
-        console.error(err);
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred";
+        setError(`Error during logout: ${errorMessage}`);
+        console.error("Sign-out page: Exception during logout:", err);
+        
         // Redirect to login page after 3 seconds even if there was an error
         setTimeout(() => {
           router.push("/auth/signin");
@@ -49,6 +57,9 @@ export default function SignOut() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
       {error && (
         <p className="text-center text-sm text-red-600 mb-4">{error}</p>
+      )}
+      {debugInfo && (
+        <p className="text-center text-xs text-gray-500 mb-2">{debugInfo}</p>
       )}
       <div className="relative w-32 h-32">
         <Image
