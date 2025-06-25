@@ -21,15 +21,18 @@ export default function SignIn() {
         // Determine which login route to use
         const loginRoute = loginMethod === 'simple' ? '/auth/login-simple' : '/auth/login';
         
-        // Make sure we have the full path
-        let loginUrl = `${baseUrl}${loginRoute}`;
+        // Construct the login URL with the correct path for Choreo
+        let loginUrl;
         
         // For Choreo URLs, make sure we have the full path
-        if (baseUrl.includes('choreoapis.dev') && !loginUrl.includes('/reachly/reachly-backend/v1.0/auth')) {
-          // If the URL doesn't already contain the path, add it
-          if (!baseUrl.includes('/reachly/reachly-backend/v1.0')) {
-            loginUrl = `${baseUrl}/reachly/reachly-backend/v1.0${loginRoute}`;
-          }
+        if (baseUrl.includes('choreoapis.dev')) {
+          // Ensure we have the complete path for Choreo
+          loginUrl = `${baseUrl}/reachly/reachly-backend/v1.0${loginRoute}`;
+          console.log("Using Choreo URL format:", loginUrl);
+        } else {
+          // Local development or other environment
+          loginUrl = `${baseUrl}${loginRoute}`;
+          console.log("Using standard URL format:", loginUrl);
         }
         
         console.log(`Redirecting to backend login URL: ${loginUrl}`);
