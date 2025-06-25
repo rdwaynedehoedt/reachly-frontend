@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function SignIn() {
   const [error, setError] = useState<string | null>(null);
@@ -21,14 +22,23 @@ export default function SignIn() {
         // Determine which login route to use
         const loginRoute = loginMethod === 'simple' ? '/auth/login-simple' : '/auth/login';
         
-        // Construct the login URL with the correct path for Choreo
+        // Construct the login URL with the correct path based on domain
         let loginUrl;
         
-        // For Choreo URLs, make sure we have the full path
+        // Check for different backend domains
         if (baseUrl.includes('choreoapis.dev')) {
-          // Ensure we have the complete path for Choreo
+          // Choreo API domain
           loginUrl = `${baseUrl}/reachly/reachly-backend/v1.0${loginRoute}`;
           console.log("Using Choreo URL format:", loginUrl);
+        } else if (baseUrl.includes('dp-development-reachly')) {
+          // New development domain - already includes the path
+          // Make sure we don't duplicate the path
+          if (baseUrl.includes('/reachly/reachly-backend/v1.0')) {
+            loginUrl = `${baseUrl}${loginRoute}`;
+          } else {
+            loginUrl = `${baseUrl}/reachly/reachly-backend/v1.0${loginRoute}`;
+          }
+          console.log("Using development domain URL format:", loginUrl);
         } else {
           // Local development or other environment
           loginUrl = `${baseUrl}${loginRoute}`;
@@ -63,28 +73,58 @@ export default function SignIn() {
               <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
             </div>
           )}
-          <button 
-            onClick={() => window.location.reload()}
-            className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md"
-          >
-            Try Again
-          </button>
-          <button 
-            onClick={toggleLoginMethod}
-            className="mt-2 ml-2 px-4 py-2 bg-blue-600 text-white rounded-md"
-          >
-            Try {loginMethod === 'standard' ? 'Simple' : 'Standard'} Login
-          </button>
+          <div className="flex flex-wrap gap-2 mt-4">
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded-md"
+            >
+              Try Again
+            </button>
+            <button 
+              onClick={toggleLoginMethod}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md"
+            >
+              Try {loginMethod === 'standard' ? 'Simple' : 'Standard'} Login
+            </button>
+            <button 
+              onClick={() => {
+                // Display the current environment variables for debugging
+                setDebugInfo({
+                  ...debugInfo,
+                  env: {
+                    NEXT_PUBLIC_BACKEND_URL: process.env.NEXT_PUBLIC_BACKEND_URL
+                  }
+                });
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-md"
+            >
+              Show Env
+            </button>
+            <Link 
+              href="/debug"
+              className="px-4 py-2 bg-purple-600 text-white rounded-md inline-block"
+            >
+              Debug Tools
+            </Link>
+          </div>
         </div>
       ) : (
-        <div className="relative w-32 h-32">
-          <Image
-            src="/png-animated-unscreen.gif"
-            alt="Loading animation"
-            fill
-            style={{ objectFit: "contain" }}
-            priority
-          />
+        <div className="flex flex-col items-center">
+          <div className="relative w-32 h-32 mb-4">
+            <Image
+              src="/png-animated-unscreen.gif"
+              alt="Loading animation"
+              fill
+              style={{ objectFit: "contain" }}
+              priority
+            />
+          </div>
+          <Link 
+            href="/debug"
+            className="text-blue-500 hover:underline mt-4"
+          >
+            Debug Connection Issues
+          </Link>
         </div>
       )}
     </div>
