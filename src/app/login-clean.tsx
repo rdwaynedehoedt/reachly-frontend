@@ -146,6 +146,8 @@ export default function Home() {
                       type="email"
                       autoComplete="email"
                       required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField('')}
                       className="block w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-2xl placeholder-gray-400 text-gray-900 
@@ -171,9 +173,11 @@ export default function Home() {
                     <input
                       id="password"
                       name="password"
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
                       required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       onFocus={() => setFocusedField('password')}
                       onBlur={() => setFocusedField('')}
                       className="block w-full pl-12 pr-12 py-4 border-2 border-gray-200 rounded-2xl placeholder-gray-400 text-gray-900 
@@ -182,161 +186,136 @@ export default function Home() {
                                hover:border-gray-300 hover:shadow-lg hover:scale-[1.02] transform"
                       placeholder="Enter your password"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute inset-y-0 right-0 pr-4 flex items-center hover:scale-110 transition-transform duration-200"
-                    >
-                      {showPassword ? (
-                        <EyeOffIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                      ) : (
-                        <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
-                      )}
-                    </button>
+                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="transition-colors duration-200 hover:scale-110 transform"
+                      >
+                        {showPassword ? (
+                          <EyeOffIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                {/* Remember & Forgot */}
+                {/* Remember Me & Forgot Password */}
                 <div className="flex items-center justify-between animate-slide-up" style={{ animationDelay: '0.4s' }}>
-                  <label className="flex items-center group cursor-pointer">
-                    <div className="relative">
-                      <input
-                        type="checkbox"
-                        checked={rememberMe}
-                        onChange={(e) => setRememberMe(e.target.checked)}
-                        className="sr-only"
-                      />
-                      <div className={`w-5 h-5 border-2 rounded-md transition-all duration-200 ${
-                        rememberMe 
-                          ? 'bg-blue-600 border-blue-600' 
-                          : 'bg-white border-gray-300 group-hover:border-blue-400'
-                      }`}>
-                        {rememberMe && (
-                          <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                  <div className="flex items-center group">
+                    <input
+                      id="remember-me"
+                      name="remember-me"
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded transition-all duration-200 cursor-pointer"
+                    />
+                    <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700 cursor-pointer group-hover:text-gray-900 transition-colors duration-200">
+                      Remember me
+                    </label>
+                    {rememberMe && (
+                      <div className="ml-2 animate-pulse">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                       </div>
-                    </div>
-                    <span className="ml-3 text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors duration-200">
-                      Keep me signed in
-                    </span>
-                  </label>
+                    )}
+                  </div>
 
-                  <a
-                    href="#"
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-800 hover:scale-105 transition-all duration-200"
-                  >
-                    Forgot password?
-                  </a>
+                  <div className="text-sm">
+                    <a href="#" className="font-medium text-blue-600 hover:text-blue-500 transition-colors duration-200 hover:underline">
+                      Forgot your password?
+                    </a>
+                  </div>
                 </div>
 
-                {/* Premium Login Button */}
+                {/* Sign In Button */}
                 <div className="animate-slide-up" style={{ animationDelay: '0.5s' }}>
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="group relative w-full flex justify-center items-center py-4 px-6 
-                             bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800
-                             text-white font-semibold rounded-2xl shadow-lg
-                             focus:outline-none focus:ring-4 focus:ring-blue-500/50
-                             transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed
-                             hover:scale-[1.02] hover:shadow-2xl transform
-                             overflow-hidden"
+                    className="group relative w-full flex justify-center py-4 px-4 border border-transparent text-lg font-semibold rounded-2xl text-white 
+                             bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 
+                             focus:outline-none focus:ring-4 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-blue-50
+                             disabled:opacity-50 disabled:cursor-not-allowed
+                             transition-all duration-300 hover:scale-[1.02] hover:shadow-xl transform
+                             shadow-lg shadow-blue-500/25"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0 
-                                  transform -skew-x-12 -translate-x-full group-hover:translate-x-full 
-                                  transition-transform duration-1000 ease-out" />
-                    
-                    {isLoading ? (
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    ) : (
-                      "Sign In"
-                    )}
+                    <span className="absolute left-0 inset-y-0 flex items-center pl-3">
+                      {isLoading ? (
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                      ) : (
+                        <SparkleIcon />
+                      )}
+                    </span>
+                    {isLoading ? 'Signing in...' : 'Sign in'}
                   </button>
                 </div>
 
-                {/* Modern Divider */}
-                <div className="relative my-8 animate-slide-up" style={{ animationDelay: '0.6s' }}>
+                {/* Divider */}
+                <div className="relative animate-slide-up" style={{ animationDelay: '0.6s' }}>
                   <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gradient-to-r from-transparent via-gray-300 to-transparent" />
+                    <div className="w-full border-t border-gray-300"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white/80 text-gray-500 font-medium backdrop-blur-sm rounded-full">
-                      Or continue with
-                    </span>
+                    <span className="px-4 bg-white/80 text-gray-500 font-medium backdrop-blur-sm rounded-full">Or continue with</span>
                   </div>
                 </div>
 
-                {/* Premium Social Buttons */}
+                {/* Social Login Buttons */}
                 <div className="grid grid-cols-2 gap-4 animate-slide-up" style={{ animationDelay: '0.7s' }}>
                   <button
                     type="button"
-                    className="flex items-center justify-center py-3 px-4 border-2 border-gray-200 rounded-2xl 
-                             bg-white/70 backdrop-blur-sm hover:border-gray-300 hover:bg-white/90
-                             text-gray-700 font-medium transition-all duration-200 group
-                             hover:scale-105 hover:shadow-lg transform"
+                    onClick={handleGoogleLogin}
+                    className="group relative w-full inline-flex justify-center items-center py-3 px-4 border-2 border-gray-200 rounded-2xl 
+                             bg-white/50 backdrop-blur-sm text-sm font-semibold text-gray-700 
+                             hover:bg-white hover:border-gray-300 hover:shadow-lg hover:scale-[1.02] 
+                             focus:outline-none focus:ring-4 focus:ring-gray-500/20 focus:border-gray-400
+                             transition-all duration-200 transform"
                   >
-                    <div className="mr-2 group-hover:scale-110 transition-transform duration-200">
-                      <GoogleIcon />
-                    </div>
-                    Google
+                    <GoogleIcon />
+                    <span className="ml-2">Google</span>
                   </button>
 
                   <button
                     type="button"
-                    className="flex items-center justify-center py-3 px-4 border-2 border-gray-200 rounded-2xl 
-                             bg-white/70 backdrop-blur-sm hover:border-gray-300 hover:bg-white/90
-                             text-gray-700 font-medium transition-all duration-200 group
-                             hover:scale-105 hover:shadow-lg transform"
+                    onClick={handleMicrosoftLogin}
+                    className="group relative w-full inline-flex justify-center items-center py-3 px-4 border-2 border-gray-200 rounded-2xl 
+                             bg-white/50 backdrop-blur-sm text-sm font-semibold text-gray-700 
+                             hover:bg-white hover:border-gray-300 hover:shadow-lg hover:scale-[1.02] 
+                             focus:outline-none focus:ring-4 focus:ring-gray-500/20 focus:border-gray-400
+                             transition-all duration-200 transform"
                   >
-                    <div className="mr-2 group-hover:scale-110 transition-transform duration-200">
-                      <MicrosoftIcon />
-                    </div>
-                    Microsoft
+                    <MicrosoftIcon />
+                    <span className="ml-2">Microsoft</span>
                   </button>
                 </div>
               </form>
             </div>
           </div>
 
-          {/* Premium Footer */}
-          <footer className="text-center pt-8 animate-slide-up" style={{ animationDelay: '0.8s' }}>
-            <p className="text-sm text-gray-600 mb-3 font-medium">
+          {/* Sign Up Link */}
+          <div className="text-center animate-slide-up" style={{ animationDelay: '0.8s' }}>
+            <p className="text-gray-600">
               Don't have an account?{' '}
-              <a
-                href="/signup"
-                className="text-blue-600 hover:text-blue-800 font-semibold hover:scale-105 transition-all duration-200"
+              <Link 
+                href="/signup" 
+                className="font-semibold text-blue-600 hover:text-blue-500 transition-colors duration-200 hover:underline"
               >
-                Sign up here
-              </a>
+                Sign up for free
+              </Link>
             </p>
-            <p className="text-sm text-gray-600 mb-3 font-medium">© 2025 All Rights Reserved</p>
-            <div className="flex justify-center space-x-6 text-sm">
-              <a
-                href="#"
-                className="text-gray-500 hover:text-blue-600 hover:scale-105 transition-all duration-200 font-medium"
-              >
-                Privacy Policy
-              </a>
-              <span className="text-gray-300">•</span>
-              <a
-                href="#"
-                className="text-gray-500 hover:text-blue-600 hover:scale-105 transition-all duration-200 font-medium"
-              >
-                Terms of Service
-              </a>
-            </div>
-          </footer>
+          </div>
         </div>
       </div>
 
-      {/* Custom CSS for animations */}
+      {/* Custom Styles */}
       <style jsx>{`
         @keyframes fade-in {
           from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
           }
           to {
             opacity: 1;
@@ -347,7 +326,7 @@ export default function Home() {
         @keyframes slide-up {
           from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(30px);
           }
           to {
             opacity: 1;
@@ -360,12 +339,7 @@ export default function Home() {
         }
 
         .animate-slide-up {
-          animation: slide-up 0.6s ease-out forwards;
-          opacity: 0;
-        }
-
-        .hover\\:shadow-3xl:hover {
-          box-shadow: 0 35px 60px -12px rgba(0, 0, 0, 0.15);
+          animation: slide-up 0.6s ease-out both;
         }
       `}</style>
     </div>
