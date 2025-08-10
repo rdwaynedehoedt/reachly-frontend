@@ -61,10 +61,12 @@ export default function SimpleGoogleButton({ onSuccess, onError, disabled = fals
           throw new Error('Google Client ID not found');
         }
 
+        // Initialize with minimal configuration to avoid FedCM issues
         (window as any).google.accounts.id.initialize({
           client_id: clientId,
           callback: (response: any) => {
             console.log('🎉 Google OAuth callback:', response);
+            setIsLoading(false);
             if (response.credential) {
               onSuccess(response.credential);
             } else {
@@ -73,8 +75,6 @@ export default function SimpleGoogleButton({ onSuccess, onError, disabled = fals
           },
           auto_select: false,
           cancel_on_tap_outside: true,
-          use_fedcm_for_prompt: false, // Disable FedCM to avoid credential errors
-          ux_mode: 'popup', // Force popup mode
         });
 
         setIsGoogleLoaded(true);
@@ -94,21 +94,51 @@ export default function SimpleGoogleButton({ onSuccess, onError, disabled = fals
     }
 
     setIsLoading(true);
-    console.log('🚀 Triggering Google OAuth popup...');
+    console.log('🚀 Triggering Google OAuth...');
 
     try {
-      (window as any).google.accounts.id.prompt((notification: any) => {
-        console.log('📝 Google prompt notification:', notification);
-        setIsLoading(false);
-        
-        if (notification.isNotDisplayed()) {
-          console.log('⚠️ Google popup was not displayed');
-          onError('Google popup blocked or not available');
-        } else if (notification.isSkippedMoment()) {
-          console.log('⚠️ Google popup was skipped');
-          onError('Google login was skipped');
+      // Create a temporary container for the Google button
+      const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'fixed';
+      tempContainer.style.top = '-9999px';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.visibility = 'hidden';
+      document.body.appendChild(tempContainer);
+
+      // Render the actual Google Sign-In button
+      (window as any).google.accounts.id.renderButton(tempContainer, {
+        type: 'standard',
+        theme: 'outline',
+        size: 'large',
+        text: 'signin_with',
+        shape: 'rectangular',
+        logo_alignment: 'left',
+        width: 250,
+        click_listener: () => {
+          console.log('🎯 Google button clicked');
         }
       });
+
+      // Programmatically click the button
+      setTimeout(() => {
+        const button = tempContainer.querySelector('div[role="button"]') as HTMLElement;
+        if (button) {
+          console.log('🎯 Clicking Google button programmatically');
+          button.click();
+        } else {
+          console.log('⚠️ Could not find Google button');
+          setIsLoading(false);
+          onError('Google button not found');
+        }
+        
+        // Clean up
+        setTimeout(() => {
+          if (document.body.contains(tempContainer)) {
+            document.body.removeChild(tempContainer);
+          }
+        }, 1000);
+      }, 100);
+
     } catch (error) {
       console.error('❌ Error triggering Google login:', error);
       setIsLoading(false);
