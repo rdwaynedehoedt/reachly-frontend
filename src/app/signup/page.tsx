@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import FadeIn from '@/components/FadeIn';
@@ -169,7 +169,7 @@ export default function SignupPage() {
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': '#1876d3' } as any}
+                  style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
               </div>
@@ -181,7 +181,7 @@ export default function SignupPage() {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': '#1876d3' } as any}
+                  style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                 />
               </div>
               
@@ -192,7 +192,7 @@ export default function SignupPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': '#1876d3' } as any}
+                  style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
               </div>
@@ -204,7 +204,7 @@ export default function SignupPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': '#1876d3' } as any}
+                  style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
                 <button

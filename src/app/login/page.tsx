@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/react/24/outline';
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
               <p className="text-gray-600">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link
                   href="/signup"
                   className="font-medium transition-colors duration-200 hover:underline"
@@ -117,7 +117,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': '#1876d3' } as any}
+                  style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
               </div>
@@ -129,7 +129,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
-                  style={{ '--tw-ring-color': '#1876d3' } as any}
+                  style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
                 <button

@@ -1,10 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Optimize for faster builds and development
-  turbopack: {
-    // Optimize Turbopack performance (moved from experimental.turbo)
-    memoryLimit: 512,
+  // Enable experimental features
+  experimental: {
+    turbo: {
+      // Turbopack optimizations
+    },
   },
 
   // Optimize images

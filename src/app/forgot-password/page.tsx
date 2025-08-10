@@ -49,12 +49,12 @@ export default function ForgotPasswordPage() {
             {!isSubmitted ? (
               <>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Reset your password</h1>
-                <p className="text-gray-600 text-base">Enter your email address and we'll send you a link to reset your password.</p>
+                <p className="text-gray-600 text-base">Enter your email address and we&apos;ll send you a link to reset your password.</p>
               </>
             ) : (
               <>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Check your email</h1>
-                <p className="text-gray-600 text-base">We've sent a password reset link to <span className="font-semibold text-gray-900">{email}</span></p>
+                <p className="text-gray-600 text-base">We&apos;ve sent a password reset link to <span className="font-semibold text-gray-900">{email}</span></p>
               </>
             )}
           </div>
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
                 
                 <div className="space-y-4">
                   <p className="text-gray-600 text-sm">
-                    Didn't receive the email? Check your spam folder or{' '}
+                    Didn&apos;t receive the email? Check your spam folder or{' '}
                     <button 
                       onClick={() => {
                         setIsSubmitted(false);
