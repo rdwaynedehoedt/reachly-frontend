@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
         <div className="w-full max-w-md">
           {/* Back Button */}
           <Link 
-            href="/signin"
+            href="/login"
             className="inline-flex items-center text-gray-500 hover:text-gray-700 transition-colors duration-200 mb-8 group font-medium"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
                   </p>
 
                                   <Link
-                  href="/signin"
+                  href="/login"
                   className="inline-block w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-xl transition-all duration-200 text-center"
                 >
                   Back to Sign In

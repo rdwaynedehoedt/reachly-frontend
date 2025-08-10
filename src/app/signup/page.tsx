@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import FadeIn from '@/components/FadeIn';
+import { useAuth } from '../../contexts/AuthContext';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -12,18 +14,47 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { signup } = useAuth();
+  const router = useRouter();
 
   const handleSocialSignup = (provider: string) => {
     setIsLoading(true);
     console.log(`Signup with ${provider}`);
+    // TODO: Implement social signup later
     setTimeout(() => setIsLoading(false), 2000);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    console.log('Form submitted:', { fullName, companyName, email, password });
-    setTimeout(() => setIsLoading(false), 2000);
+    setError('');
+
+    // Split full name into first and last name
+    const nameParts = fullName.trim().split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    try {
+      const result = await signup({
+        email,
+        password,
+        firstName,
+        lastName,
+      });
+      
+      if (result.success) {
+        // Redirect to dashboard  
+        router.push('/dashboard');
+      } else {
+        setError(result.message || 'Signup failed. Please try again.');
+      }
+    } catch (error) {
+      setError('Network error. Please check your connection and try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -104,7 +135,7 @@ export default function SignupPage() {
               <p className="text-gray-600">
                 Already have an account?{' '}
                 <Link
-                  href="/signin"
+                  href="/login"
                   className="font-medium transition-colors duration-200 hover:underline"
                   style={{ color: '#1876d3' }}
                 >
@@ -158,6 +189,15 @@ export default function SignupPage() {
               </div>
             </div>
           </FadeIn>
+
+          {/* Error Message */}
+          {error && (
+            <FadeIn delay={400}>
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                {error}
+              </div>
+            </FadeIn>
+          )}
 
           {/* Email Signup Form */}
           <FadeIn delay={500}>

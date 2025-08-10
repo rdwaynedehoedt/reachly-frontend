@@ -8,7 +8,7 @@ export default function Home() {
 
   useEffect(() => {
     // Redirect to sign in page
-    router.push('/signin');
+    router.push('/login');
   }, [router]);
 
   return (
