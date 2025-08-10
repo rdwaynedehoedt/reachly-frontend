@@ -25,12 +25,25 @@ export default function OnboardingPage() {
     setIsCompleting(true);
     
     try {
+      // Prepare organization data for backend
+      let organizationData = null;
+      if (userData.organization && userData.organization.name) {
+        organizationData = {
+          mode: userData.organization.isNew ? 'create' as const : 'join' as const,
+          name: userData.organization.name,
+          industry: userData.organization.industry || undefined,
+          size: userData.organization.size || undefined,
+          existingOrgId: userData.organization.id || undefined
+        };
+      }
+
       // Save onboarding data to backend
       const result = await completeOnboarding({
         role: userData.role,
         experienceLevel: userData.experienceLevel,
         goals: userData.goals,
-        company: userData.organizationName,
+        organization: organizationData,
+        teamMembers: userData.teamMembers || [],
         jobTitle: userData.role
       });
       

@@ -32,9 +32,17 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
 
   // Check if user is authenticated on component mount
   useEffect(() => {
+    // Restore token from localStorage (only in browser)
+    if (typeof window !== 'undefined') {
+      const savedToken = localStorage.getItem('authToken');
+      if (savedToken) {
+        setToken(savedToken);
+      }
+    }
     checkAuthStatus();
   }, []);
 
@@ -66,6 +74,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (response.success && response.data) {
         setUser(response.data.user);
+        const authToken = response.data.token || response.data.accessToken;
+        setToken(authToken || null);
+        if (typeof window !== 'undefined' && authToken) {
+          localStorage.setItem('authToken', authToken);
+        }
         return { success: true };
       } else {
         return {
@@ -87,6 +100,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (response.success && response.data) {
         setUser(response.data.user);
+        const authToken = response.data.token || response.data.accessToken;
+        setToken(authToken || null);
+        if (typeof window !== 'undefined' && authToken) {
+          localStorage.setItem('authToken', authToken);
+        }
         return { success: true };
       } else {
         return {
@@ -106,10 +124,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       await logout();
       setUser(null);
+      setToken(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+      }
     } catch (error) {
       console.error('Logout failed:', error);
       // Still clear user state even if logout request fails
       setUser(null);
+      setToken(null);
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+      }
     }
   };
 
@@ -119,6 +145,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       
       if (response.success && response.data) {
         setUser(response.data.user);
+        const authToken = response.data.token || response.data.accessToken;
+        setToken(authToken || null);
+        if (typeof window !== 'undefined' && authToken) {
+          localStorage.setItem('authToken', authToken);
+        }
         return { success: true };
       } else {
         return {

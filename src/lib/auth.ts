@@ -1,5 +1,14 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
+// Helper function to get auth headers
+const getAuthHeaders = (): Record<string, string> => {
+  // Check if we're in the browser before accessing localStorage
+  if (typeof window === 'undefined') return {};
+  
+  const token = localStorage.getItem('authToken');
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export interface User {
   id: string;
   email: string;
@@ -27,7 +36,8 @@ export interface AuthResponse {
   success: boolean;
   data?: {
     user: User;
-    token: string;
+    token?: string;
+    accessToken?: string;
   };
   message?: string;
 }
@@ -69,6 +79,8 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
 // Signup function
 export async function signup(signupData: SignupData): Promise<AuthResponse> {
   try {
+    console.log('🚀 Signup attempt:', { API_URL, signupData: { ...signupData, password: '[HIDDEN]' } });
+    
     const response = await fetch(`${API_URL}/auth/signup`, {
       method: 'POST',
       headers: {
@@ -78,7 +90,9 @@ export async function signup(signupData: SignupData): Promise<AuthResponse> {
       body: JSON.stringify(signupData),
     });
 
+    console.log('📡 Signup response status:', response.status);
     const data = await response.json();
+    console.log('📄 Signup response data:', data);
 
     if (!response.ok) {
       return {
@@ -127,6 +141,9 @@ export async function getCurrentUser(): Promise<{ success: boolean; data?: User;
   try {
     const response = await fetch(`${API_URL}/auth/me`, {
       method: 'GET',
+      headers: {
+        ...getAuthHeaders(),
+      },
       credentials: 'include',
     });
 
@@ -230,14 +247,22 @@ export async function completeOnboarding(data: {
   role: string;
   experienceLevel: string;
   goals: string[];
-  company?: string;
+  organization?: {
+    mode: 'create' | 'join';
+    name: string;
+    industry?: string;
+    size?: string;
+    existingOrgId?: string;
+  } | null;
+  teamMembers?: { email: string; role: string }[];
   jobTitle?: string;
-}): Promise<{ success: boolean; message?: string }> {
+}): Promise<{ success: boolean; message?: string; data?: any }> {
   try {
     const response = await fetch(`${API_URL}/user/complete-onboarding`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        ...getAuthHeaders(),
       },
       credentials: 'include',
       body: JSON.stringify(data),
@@ -255,6 +280,7 @@ export async function completeOnboarding(data: {
     return {
       success: true,
       message: result.message,
+      data: result.data,
     };
   } catch (error) {
     console.error('Complete onboarding error:', error);
