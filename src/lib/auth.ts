@@ -50,7 +50,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include', // Include cookies for refresh tokens
+      // credentials: 'include', // Temporarily disabled for CORS testing
       body: JSON.stringify(credentials),
     });
 
@@ -86,7 +86,7 @@ export async function signup(signupData: SignupData): Promise<AuthResponse> {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
+      // credentials: 'include', // Temporarily disabled for CORS testing
       body: JSON.stringify(signupData),
     });
 
@@ -216,7 +216,7 @@ export async function googleAuth(credential: string): Promise<AuthResponse> {
       headers: {
         'Content-Type': 'application/json',
       },
-      credentials: 'include',
+      // credentials: 'include', // Temporarily disabled for CORS testing
       body: JSON.stringify({ credential }),
     });
 
