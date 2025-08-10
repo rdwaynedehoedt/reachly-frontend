@@ -5,14 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 
 export default function DashboardPage() {
-  const { user, loading, isAuthenticated, logout } = useAuth();
+  const { user, loading, isAuthenticated, needsOnboarding, logout } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       router.push('/login');
+    } else if (!loading && isAuthenticated && needsOnboarding) {
+      router.push('/onboarding');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, needsOnboarding, loading, router]);
 
   const handleLogout = async () => {
     await logout();

@@ -16,7 +16,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
-  const { login, googleLogin } = useAuth();
+  const { login, googleLogin, refreshUser } = useAuth();
   const router = useRouter();
 
   const handleGoogleSuccess = async (credential: string) => {
@@ -30,8 +30,11 @@ export default function LoginPage() {
       console.log('📨 Google login result:', result);
       
       if (result.success) {
-        console.log('✅ Google login successful, redirecting to dashboard');
-        router.push('/dashboard');
+        console.log('✅ Google login successful, redirecting...');
+        // Give a moment for auth context to update, then redirect
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 100);
       } else {
         console.log('❌ Google login failed:', result.message);
         setError(result.message || 'Google login failed. Please try again.');
@@ -69,7 +72,7 @@ export default function LoginPage() {
       const result = await login({ email, password });
       
       if (result.success) {
-        // Redirect to dashboard
+        // Redirect to dashboard (dashboard will handle onboarding redirect)
         router.push('/dashboard');
       } else {
         setError(result.message || 'Login failed. Please try again.');

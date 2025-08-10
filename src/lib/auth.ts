@@ -6,6 +6,7 @@ export interface User {
   firstName: string;
   lastName: string;
   isVerified: boolean;
+  onboardingCompleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -217,6 +218,46 @@ export async function googleAuth(credential: string): Promise<AuthResponse> {
     };
   } catch (error) {
     console.error('Google auth error:', error);
+    return {
+      success: false,
+      message: 'Network error. Please try again.',
+    };
+  }
+}
+
+// Complete onboarding
+export async function completeOnboarding(data: {
+  role: string;
+  experienceLevel: string;
+  goals: string[];
+  company?: string;
+  jobTitle?: string;
+}): Promise<{ success: boolean; message?: string }> {
+  try {
+    const response = await fetch(`${API_URL}/user/complete-onboarding`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: result.message || 'Failed to complete onboarding',
+      };
+    }
+
+    return {
+      success: true,
+      message: result.message,
+    };
+  } catch (error) {
+    console.error('Complete onboarding error:', error);
     return {
       success: false,
       message: 'Network error. Please try again.',

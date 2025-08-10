@@ -45,8 +45,8 @@ export default function SignupPage() {
       });
       
       if (result.success) {
-        // Redirect to dashboard  
-        router.push('/dashboard');
+        // New users need onboarding, redirect there
+        router.push('/onboarding');
       } else {
         setError(result.message || 'Signup failed. Please try again.');
       }

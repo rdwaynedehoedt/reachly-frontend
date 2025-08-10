@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
+  needsOnboarding: boolean;
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; message?: string }>;
   signup: (data: SignupData) => Promise<{ success: boolean; message?: string }>;
   googleLogin: (credential: string) => Promise<{ success: boolean; message?: string }>;
@@ -141,6 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     loading,
     isAuthenticated: !!user,
+    needsOnboarding: !!user && !user.onboardingCompleted,
     login: handleLogin,
     signup: handleSignup,
     googleLogin: handleGoogleLogin,
