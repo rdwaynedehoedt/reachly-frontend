@@ -7,6 +7,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import FadeIn from '@/components/FadeIn';
 import { useAuth } from '../../contexts/AuthContext';
 import SimpleGoogleButton from '../../components/ui/SimpleGoogleButton';
+import { InlineLoading } from '@/components/ui/LoadingAnimation';
 
 export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -279,14 +280,7 @@ export default function SignupPage() {
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1876d3'}
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Creating Account...
-                  </div>
-                ) : (
-                  'Create Account'
-                )}
+{isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
             </form>
           </FadeIn>

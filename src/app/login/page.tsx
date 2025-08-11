@@ -274,14 +274,7 @@ export default function LoginPage() {
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1876d3'}
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Logging In...
-                  </div>
-                ) : (
-                  'Log In'
-                )}
+{isLoading ? 'Logging In...' : 'Log In'}
               </button>
 
               {/* Keep signed in & Forgot password */}

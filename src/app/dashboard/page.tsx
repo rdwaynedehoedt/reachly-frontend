@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
+import { LoadingScreen } from '@/components/ui/LoadingAnimation';
 
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, needsOnboarding, logout } = useAuth();
@@ -22,11 +23,7 @@ export default function DashboardPage() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2" style={{ borderColor: '#1876d3' }}></div>
-      </div>
-    );
+    return <LoadingScreen message="Loading dashboard..." />;
   }
 
   if (!isAuthenticated) {
