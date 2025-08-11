@@ -33,7 +33,7 @@ export default function LoginPage() {
         console.log('✅ Google login successful, redirecting...');
         // Give a moment for auth context to update, then redirect
         setTimeout(() => {
-          router.push('/dashboard');
+          router.push('/dashboard'); 
         }, 100);
       } else {
         console.log('❌ Google login failed:', result.message);
@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleError = (error: any) => {
-    console.error('❌ Google login error:', error);
+    console.error('❌Google login error:', error);
     setError('Google login failed. Please try again.');
   };
 
