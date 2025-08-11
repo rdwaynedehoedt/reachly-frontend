@@ -3,7 +3,7 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoadingScreen } from '@/components/ui/LoadingAnimation';
+import { LoadingScreen } from '@/components/ui';
 
 export default function DashboardPage() {
   const { user, loading, isAuthenticated, needsOnboarding, logout } = useAuth();

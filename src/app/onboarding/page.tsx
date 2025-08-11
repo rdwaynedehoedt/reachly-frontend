@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { OnboardingFlow } from '@/components/onboarding';
 import { completeOnboarding } from '@/lib/auth';
-import { LoadingScreen } from '@/components/ui/LoadingAnimation';
+import { LoadingScreen } from '@/components/ui';
 
 export default function OnboardingPage() {
   const router = useRouter();
