@@ -61,7 +61,7 @@ export default function SimpleGoogleButton({ onSuccess, onError, disabled = fals
           throw new Error('Google Client ID not found');
         }
 
-        // Initialize with minimal configuration to avoid FedCM issues
+        // Initialize with configuration for client-side flow
         (window as any).google.accounts.id.initialize({
           client_id: clientId,
           callback: (response: any) => {
@@ -75,6 +75,8 @@ export default function SimpleGoogleButton({ onSuccess, onError, disabled = fals
           },
           auto_select: false,
           cancel_on_tap_outside: true,
+          ux_mode: 'popup', // Force popup mode (no redirect needed)
+          use_fedcm_for_prompt: false, // Disable FedCM which can cause issues
         });
 
         setIsGoogleLoaded(true);

@@ -5,6 +5,7 @@ import GoalSelection from './GoalSelection';
 import ExperienceLevel from './ExperienceLevel';
 import OrganizationSetup from './OrganizationSetup';
 import TeamInvitation from './TeamInvitation';
+import EmailConnection from './EmailConnection';
 import CompletionScreen from './CompletionScreen';
 
 interface OnboardingFlowProps {
@@ -18,6 +19,7 @@ type OnboardingStep =
   | 'experience_level'
   | 'organization_setup'
   | 'team_invitation'
+  | 'email_connection'
   | 'completion';
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) => {
@@ -33,7 +35,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
       size: '',
       isNew: true
     },
-    teamMembers: [] as { email: string; role: string }[]
+    teamMembers: [] as { email: string; role: string }[],
+    emailAccounts: {
+      connectedAccounts: [] as { provider: string; email: string; status: string }[],
+      skipForNow: false
+    }
   });
 
   const handleRoleSelect = (role: string) => {
@@ -84,6 +90,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
     setUserData(prev => ({ ...prev, teamMembers: invitees }));
   };
 
+  const handleEmailSetup = (emailData: { 
+    connectedAccounts: { provider: string; email: string; status: string }[];
+    skipForNow: boolean;
+  }) => {
+    setUserData(prev => ({ ...prev, emailAccounts: emailData }));
+  };
+
   const handleNextStep = () => {
     const steps: OnboardingStep[] = [
       'role_selection',
@@ -91,6 +104,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
       'experience_level',
       'organization_setup',
       'team_invitation',
+      'email_connection',
       'completion'
     ];
     
@@ -107,6 +121,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
       'experience_level',
       'organization_setup',
       'team_invitation',
+      'email_connection',
       'completion'
     ];
     
@@ -174,6 +189,15 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
             onSkip={handleSkip}
           />
         );
+      case 'email_connection':
+        return (
+          <EmailConnection
+            onEmailSetup={handleEmailSetup}
+            onContinue={handleNextStep}
+            onBack={handlePreviousStep}
+            onSkip={handleSkip}
+          />
+        );
       case 'completion':
         return (
           <CompletionScreen
@@ -192,7 +216,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
       'goal_selection',
       'experience_level',
       'organization_setup',
-      'team_invitation'
+      'team_invitation',
+      'email_connection'
     ];
     
     const currentIndex = steps.indexOf(currentStep);
@@ -207,7 +232,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
         <div className="max-w-3xl mx-auto px-4 mb-8">
           <div className="mb-2 flex justify-between items-center">
             <span className="text-sm font-medium text-gray-500">
-              Step {getStepNumber(currentStep)} of 5
+              Step {getStepNumber(currentStep)} of 6
             </span>
             <span className="text-sm font-medium text-gray-500">
               {getProgressPercentage()}% Complete
@@ -235,7 +260,8 @@ function getStepNumber(step: OnboardingStep): number {
     'goal_selection',
     'experience_level',
     'organization_setup',
-    'team_invitation'
+    'team_invitation',
+    'email_connection'
   ];
   
   return steps.indexOf(step) + 1;

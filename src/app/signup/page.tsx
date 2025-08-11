@@ -78,73 +78,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex bg-white">
-      {/* Left Panel - Clean Benefits (60%) */}
-      <div className="flex-[3] bg-gray-50 flex flex-col justify-center items-center p-12">
-        <FadeIn>
-          <div className="text-center max-w-lg">
-            {/* Logo */}
-            <div className="flex items-center justify-center mb-8">
-              <img
-                src="/logo with no background no nae just logo.png"
-                alt="Reachly Logo"
-                className="h-12 w-auto mr-3"
-              />
-              <span className="text-2xl font-bold" style={{ color: '#1876d3' }}>Reachly</span>
-            </div>
-
-            {/* Big Number */}
-            <div className="text-6xl font-bold mb-6" style={{ color: '#1876d3' }}>
-              800,000+
-            </div>
-            
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Sales professionals trust Reachly
-            </h1>
-
-            <p className="text-gray-600 mb-8 text-lg leading-relaxed">
-              Find prospects, automate outreach, and close more deals with AI-powered sales tools.
-            </p>
-
-            {/* Clean Features List */}
-            <div className="space-y-3 mb-8 text-left">
-              <div className="flex items-center">
-                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
-                <span className="text-gray-700">200M+ verified contacts</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
-                <span className="text-gray-700">AI-powered email sequences</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
-                <span className="text-gray-700">Chrome extension included</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
-                <span className="text-gray-700">Real-time tracking</span>
-              </div>
-            </div>
-
-            {/* Simple Stats */}
-            <div className="grid grid-cols-3 gap-6 text-center">
-              <div>
-                <div className="text-2xl font-bold" style={{ color: '#1876d3' }}>200M+</div>
-                <div className="text-gray-600 text-sm">Contacts</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold" style={{ color: '#1876d3' }}>500K+</div>
-                <div className="text-gray-600 text-sm">Companies</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold" style={{ color: '#1876d3' }}>99.5%</div>
-                <div className="text-gray-600 text-sm">Uptime</div>
-              </div>
-            </div>
-          </div>
-        </FadeIn>
-      </div>
-
-      {/* Right Panel - Simple Signup Form (40%) */}
+      {/* Left Panel - Simple Signup Form (40%) */}
       <div className="flex-[2] flex flex-col justify-center items-center p-8">
         <div className="w-full max-w-sm">
           {/* Header */}
@@ -301,6 +235,72 @@ export default function SignupPage() {
             </div>
           </FadeIn>
         </div>
+      </div>
+
+      {/* Right Panel - Marketing Content (60%) */}
+      <div className="flex-[3] bg-gray-50 flex flex-col justify-center items-center p-12">
+        <FadeIn>
+          <div className="text-center max-w-lg">
+            {/* Logo */}
+            <div className="flex items-center justify-center mb-8">
+              <img
+                src="/logo with no background no nae just logo.png"
+                alt="Reachly Logo"
+                className="h-12 w-auto mr-3"
+              />
+              <span className="text-2xl font-bold" style={{ color: '#1876d3' }}>Reachly</span>
+            </div>
+
+            {/* Big Number */}
+            <div className="text-6xl font-bold mb-6" style={{ color: '#1876d3' }}>
+              1M+
+            </div>
+            
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+              Email marketers trust Reachly
+            </h1>
+
+            <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+              Create engaging campaigns, automate email sequences, and grow your audience with AI-powered email marketing tools.
+            </p>
+
+            {/* Clean Features List */}
+            <div className="space-y-3 mb-8 text-left">
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
+                <span className="text-gray-700">Smart email automation</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
+                <span className="text-gray-700">AI-powered personalization</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
+                <span className="text-gray-700">Advanced analytics dashboard</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#1876d3' }}></div>
+                <span className="text-gray-700">Real-time campaign tracking</span>
+              </div>
+            </div>
+
+            {/* Simple Stats */}
+            <div className="grid grid-cols-3 gap-6 text-center">
+              <div>
+                <div className="text-2xl font-bold" style={{ color: '#1876d3' }}>2B+</div>
+                <div className="text-gray-600 text-sm">Emails Sent</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold" style={{ color: '#1876d3' }}>50K+</div>
+                <div className="text-gray-600 text-sm">Campaigns</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold" style={{ color: '#1876d3' }}>98.7%</div>
+                <div className="text-gray-600 text-sm">Delivery Rate</div>
+              </div>
+            </div>
+          </div>
+        </FadeIn>
       </div>
     </div>
   );
