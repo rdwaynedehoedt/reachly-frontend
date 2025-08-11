@@ -85,7 +85,7 @@ export default function SignupPage() {
             {/* Logo */}
             <div className="flex items-center justify-center mb-8">
               <img
-                src="/logo with no background.png"
+                src="/logo with no background no nae just logo.png"
                 alt="Reachly Logo"
                 className="h-12 w-auto mr-3"
               />

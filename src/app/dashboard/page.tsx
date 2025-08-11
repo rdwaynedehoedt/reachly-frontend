@@ -38,7 +38,7 @@ export default function DashboardPage() {
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center">
               <img 
-                src="/logo with no background.png" 
+                src="/logo with no background no nae just logo.png" 
                 alt="Reachly Logo" 
                 className="h-8 w-auto mr-3"
               />
