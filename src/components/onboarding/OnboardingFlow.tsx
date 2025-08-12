@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useSearchParams } from 'next/navigation';
 import RoleSelection from './RoleSelection';
 import GoalSelection from './GoalSelection';
 import ExperienceLevel from './ExperienceLevel';
@@ -8,6 +7,7 @@ import OrganizationSetup from './OrganizationSetup';
 import TeamInvitation from './TeamInvitation';
 import EmailConnection from './EmailConnection';
 import CompletionScreen from './CompletionScreen';
+import { useEmail } from '@/contexts/EmailContext';
 
 interface OnboardingFlowProps {
   userId: string;
@@ -24,29 +24,27 @@ type OnboardingStep =
   | 'completion';
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) => {
-  const searchParams = useSearchParams();
-  
-  // Initialize step from URL params, localStorage, or default to first step
+  const { emailAccounts } = useEmail();
+
+  // Initialize step based on OAuth callback or start from first step
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(() => {
-    // Check URL parameters first
-    const urlStep = searchParams?.get('step');
-    const validSteps = ['role_selection', 'goal_selection', 'experience_level', 'organization_setup', 'team_invitation', 'email_connection', 'completion'];
-    
-    if (urlStep && validSteps.includes(urlStep)) {
-      return urlStep as OnboardingStep;
-    }
-    
-    // Then check localStorage
+    // Check if we're returning from OAuth callback
     if (typeof window !== 'undefined') {
-      const savedStep = localStorage.getItem('onboarding_step');
-      if (savedStep && validSteps.includes(savedStep)) {
-        return savedStep as OnboardingStep;
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('connected') || urlParams.has('error')) {
+        // Return from OAuth, stay on email connection step
+        return 'email_connection';
       }
     }
-    
-    // Default to first step
     return 'role_selection';
   });
+
+  // Clear any existing step persistence on component mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('onboarding_step');
+    }
+  }, []);
   
   // Initialize userData from localStorage or defaults
   const [userData, setUserData] = useState(() => {
@@ -81,29 +79,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
     return defaultData;
   });
 
-  // Handle URL parameters and localStorage management
-  useEffect(() => {
-    const status = searchParams?.get('status');
-    const urlStep = searchParams?.get('step');
-    
-    // If user is starting fresh (no URL params), clear saved progress
-    if (!urlStep && !status && typeof window !== 'undefined') {
-      const shouldReset = !localStorage.getItem('fresh_start_' + userId);
-      if (shouldReset) {
-        localStorage.removeItem('onboarding_step');
-        localStorage.removeItem('onboarding_data');
-        localStorage.setItem('fresh_start_' + userId, 'true');
-        if (currentStep !== 'role_selection') {
-          setCurrentStep('role_selection');
-        }
-      }
-    }
-    
-    // Save step to localStorage whenever it changes
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('onboarding_step', currentStep);
-    }
-  }, [currentStep, searchParams, userId]);
+
 
   // Save userData to localStorage whenever it changes
   useEffect(() => {
@@ -115,10 +91,41 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
   // Clear localStorage when onboarding is completed
   useEffect(() => {
     if (currentStep === 'completion') {
-      localStorage.removeItem('onboarding_step');
       localStorage.removeItem('onboarding_data');
     }
   }, [currentStep]);
+
+  // Handle successful OAuth callback and auto-progress to completion
+  useEffect(() => {
+    if (currentStep === 'email_connection' && emailAccounts.length > 0) {
+      // Check if we just returned from OAuth (URL has connected parameter)
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('connected')) {
+        // Update user data with connected accounts
+        const connectedAccounts = emailAccounts.map(account => ({
+          provider: account.provider,
+          email: account.email,
+          status: account.status
+        }));
+        
+        setUserData((prev: typeof userData) => ({
+          ...prev,
+          emailAccounts: {
+            connectedAccounts,
+            skipForNow: false
+          }
+        }));
+        
+        console.log('✅ Email account connected via OAuth, showing success animation...');
+        
+        // Show success animation for 3.5 seconds then proceed to completion
+        setTimeout(() => {
+          console.log('🎯 Auto-progressing to completion screen...');
+          setCurrentStep('completion');
+        }, 3500); // Give user time to enjoy the beautiful animation
+      }
+    }
+  }, [currentStep, emailAccounts]);
 
   const handleRoleSelect = (role: string) => {
     setUserData((prev: typeof userData) => ({ ...prev, role }));
