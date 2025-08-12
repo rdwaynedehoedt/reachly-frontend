@@ -23,6 +23,24 @@ const EmailConnection: React.FC<EmailConnectionProps> = ({
 }) => {
   const { emailAccounts, loading, error, connectGmail, disconnectAccount, clearError } = useEmail();
   const [isConnecting, setIsConnecting] = useState<string | null>(null);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // Show success message when email accounts are connected
+  useEffect(() => {
+    if (emailAccounts.length > 0 && !showSuccessMessage) {
+      setShowSuccessMessage(true);
+      // Auto-call onEmailSetup when accounts are detected
+      const connectedAccounts = emailAccounts.map(account => ({
+        provider: account.provider,
+        email: account.email,
+        status: account.status
+      }));
+      onEmailSetup({
+        connectedAccounts,
+        skipForNow: false
+      });
+    }
+  }, [emailAccounts, onEmailSetup, showSuccessMessage]);
 
   const emailProviders = [
     {
@@ -34,7 +52,7 @@ const EmailConnection: React.FC<EmailConnectionProps> = ({
       popular: true,
       logo: (
         <img 
-          src="https://developers.google.com/gmail/images/gmail-icon.svg" 
+          src="https://ssl.gstatic.com/ui/v1/icons/mail/rfr/gmail.ico" 
           alt="Gmail"
           className="w-8 h-8"
           onError={(e) => {
@@ -179,6 +197,32 @@ const EmailConnection: React.FC<EmailConnectionProps> = ({
               </div>
               <p className="text-sm text-red-700 mt-1">{error}</p>
             </div>
+          )}
+
+          {/* Success Display */}
+          {showSuccessMessage && emailAccounts.length > 0 && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6"
+            >
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <h4 className="font-medium text-green-900">🎉 Email Account Connected!</h4>
+              </div>
+              <div className="mt-2">
+                {emailAccounts.map((account, index) => (
+                  <p key={index} className="text-sm text-green-700">
+                    ✅ {account.email} ({account.provider})
+                  </p>
+                ))}
+              </div>
+              <p className="text-sm text-green-600 mt-2">
+                Proceeding to complete your onboarding...
+              </p>
+            </motion.div>
           )}
 
           {/* Email Provider Cards */}

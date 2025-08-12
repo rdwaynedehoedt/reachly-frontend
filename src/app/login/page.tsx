@@ -302,7 +302,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <FadeIn delay={600}>
-            <div className="mt-6 text-xs text-gray-500 text-center">
+            <div className="mt-6 text-xs text-gray-500 text-center space-y-2">
               <p>
                 2025 All Rights Reserved.{' '}
                 <Link href="/privacy" className="transition-colors duration-200 hover:underline" style={{ color: '#1876d3' }}>
@@ -312,6 +312,17 @@ export default function LoginPage() {
                 <Link href="/terms" className="transition-colors duration-200 hover:underline" style={{ color: '#1876d3' }}>
                   Terms
                 </Link>.
+              </p>
+              <p className="text-gray-400">
+                Developed by{' '}
+                <a
+                  href="https://t3xlk.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-500 hover:text-blue-600 transition-colors duration-200"
+                >
+                  T3X LK
+                </a>
               </p>
             </div>
           </FadeIn>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import RoleSelection from './RoleSelection';
 import GoalSelection from './GoalSelection';
@@ -23,35 +23,82 @@ type OnboardingStep =
   | 'completion';
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) => {
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>('role_selection');
-  const [userData, setUserData] = useState({
-    userId,
-    role: '',
-    goals: [] as string[],
-    experienceLevel: '',
-    organization: {
-      name: '',
-      industry: '',
-      size: '',
-      isNew: true
-    },
-    teamMembers: [] as { email: string; role: string }[],
-    emailAccounts: {
-      connectedAccounts: [] as { provider: string; email: string; status: string }[],
-      skipForNow: false
+  // Initialize step from localStorage or default to first step
+  const [currentStep, setCurrentStep] = useState<OnboardingStep>(() => {
+    if (typeof window !== 'undefined') {
+      const savedStep = localStorage.getItem('onboarding_step');
+      if (savedStep && ['role_selection', 'goal_selection', 'experience_level', 'organization_setup', 'team_invitation', 'email_connection', 'completion'].includes(savedStep)) {
+        return savedStep as OnboardingStep;
+      }
     }
+    return 'role_selection';
+  });
+  
+  // Initialize userData from localStorage or defaults
+  const [userData, setUserData] = useState(() => {
+    const defaultData = {
+      userId,
+      role: '',
+      goals: [] as string[],
+      experienceLevel: '',
+      organization: {
+        name: '',
+        industry: '',
+        size: '',
+        isNew: true
+      },
+      teamMembers: [] as { email: string; role: string }[],
+      emailAccounts: {
+        connectedAccounts: [] as { provider: string; email: string; status: string }[],
+        skipForNow: false
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      const savedData = localStorage.getItem('onboarding_data');
+      if (savedData) {
+        try {
+          return { ...defaultData, ...JSON.parse(savedData) };
+        } catch (error) {
+          console.warn('Failed to parse saved onboarding data');
+        }
+      }
+    }
+    return defaultData;
   });
 
+  // Save step to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_step', currentStep);
+    }
+  }, [currentStep]);
+
+  // Save userData to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('onboarding_data', JSON.stringify(userData));
+    }
+  }, [userData]);
+
+  // Clear localStorage when onboarding is completed
+  useEffect(() => {
+    if (currentStep === 'completion') {
+      localStorage.removeItem('onboarding_step');
+      localStorage.removeItem('onboarding_data');
+    }
+  }, [currentStep]);
+
   const handleRoleSelect = (role: string) => {
-    setUserData(prev => ({ ...prev, role }));
+    setUserData((prev: typeof userData) => ({ ...prev, role }));
   };
 
   const handleGoalsSelect = (goals: string[]) => {
-    setUserData(prev => ({ ...prev, goals }));
+    setUserData((prev: typeof userData) => ({ ...prev, goals }));
   };
 
   const handleExperienceSelect = (experienceLevel: string) => {
-    setUserData(prev => ({ ...prev, experienceLevel }));
+    setUserData((prev: typeof userData) => ({ ...prev, experienceLevel }));
   };
 
   const handleOrganizationSetup = (organizationData: {
@@ -62,7 +109,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
     existingOrgId?: string;
   }) => {
     if (organizationData.mode === 'create' && organizationData.name) {
-      setUserData(prev => ({
+      setUserData((prev: typeof userData) => ({
         ...prev,
         organization: {
           name: organizationData.name || '',
@@ -73,7 +120,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
       }));
     } else if (organizationData.mode === 'join' && organizationData.existingOrgId) {
       // In a real app, you would fetch the organization details here
-      setUserData(prev => ({
+      setUserData((prev: typeof userData) => ({
         ...prev,
         organization: {
           name: 'Existing Organization', // This would be fetched from the API
@@ -87,14 +134,22 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
   };
 
   const handleInviteTeam = (invitees: { email: string; role: string }[]) => {
-    setUserData(prev => ({ ...prev, teamMembers: invitees }));
+    setUserData((prev: typeof userData) => ({ ...prev, teamMembers: invitees }));
   };
 
   const handleEmailSetup = (emailData: { 
     connectedAccounts: { provider: string; email: string; status: string }[];
     skipForNow: boolean;
   }) => {
-    setUserData(prev => ({ ...prev, emailAccounts: emailData }));
+    setUserData((prev: typeof userData) => ({ ...prev, emailAccounts: emailData }));
+    
+    // Auto-progress to completion if email account(s) were successfully connected
+    if (emailData.connectedAccounts.length > 0) {
+      console.log('✅ Email account(s) connected successfully, proceeding to completion...');
+      setTimeout(() => {
+        setCurrentStep('completion');
+      }, 1500); // Give user a moment to see the success state
+    }
   };
 
   const handleNextStep = () => {
