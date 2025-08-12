@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import RoleSelection from './RoleSelection';
 import GoalSelection from './GoalSelection';
 import ExperienceLevel from './ExperienceLevel';
@@ -23,14 +24,27 @@ type OnboardingStep =
   | 'completion';
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) => {
-  // Initialize step from localStorage or default to first step
+  const searchParams = useSearchParams();
+  
+  // Initialize step from URL params, localStorage, or default to first step
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(() => {
+    // Check URL parameters first
+    const urlStep = searchParams?.get('step');
+    const validSteps = ['role_selection', 'goal_selection', 'experience_level', 'organization_setup', 'team_invitation', 'email_connection', 'completion'];
+    
+    if (urlStep && validSteps.includes(urlStep)) {
+      return urlStep as OnboardingStep;
+    }
+    
+    // Then check localStorage
     if (typeof window !== 'undefined') {
       const savedStep = localStorage.getItem('onboarding_step');
-      if (savedStep && ['role_selection', 'goal_selection', 'experience_level', 'organization_setup', 'team_invitation', 'email_connection', 'completion'].includes(savedStep)) {
+      if (savedStep && validSteps.includes(savedStep)) {
         return savedStep as OnboardingStep;
       }
     }
+    
+    // Default to first step
     return 'role_selection';
   });
   
@@ -67,12 +81,29 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ userId, onComplete }) =
     return defaultData;
   });
 
-  // Save step to localStorage whenever it changes
+  // Handle URL parameters and localStorage management
   useEffect(() => {
+    const status = searchParams?.get('status');
+    const urlStep = searchParams?.get('step');
+    
+    // If user is starting fresh (no URL params), clear saved progress
+    if (!urlStep && !status && typeof window !== 'undefined') {
+      const shouldReset = !localStorage.getItem('fresh_start_' + userId);
+      if (shouldReset) {
+        localStorage.removeItem('onboarding_step');
+        localStorage.removeItem('onboarding_data');
+        localStorage.setItem('fresh_start_' + userId, 'true');
+        if (currentStep !== 'role_selection') {
+          setCurrentStep('role_selection');
+        }
+      }
+    }
+    
+    // Save step to localStorage whenever it changes
     if (typeof window !== 'undefined') {
       localStorage.setItem('onboarding_step', currentStep);
     }
-  }, [currentStep]);
+  }, [currentStep, searchParams, userId]);
 
   // Save userData to localStorage whenever it changes
   useEffect(() => {
