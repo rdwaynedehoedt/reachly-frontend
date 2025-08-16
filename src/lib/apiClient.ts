@@ -63,7 +63,7 @@ export const api = {
 export const leadsApi = {
   getAll: async () => {
     const response = await api.get('/leads');
-    return response.json();
+    return response.data;
   },
   
   import: async (data: {
@@ -73,11 +73,11 @@ export const leadsApi = {
     duplicateChecks: any;
   }) => {
     const response = await api.post('/leads/import', data);
-    return response.json();
+    return response.data;
   },
   
   delete: async (leadId: string) => {
     const response = await api.delete(`/leads/${leadId}`);
-    return response.json();
+    return response.data;
   },
 };
