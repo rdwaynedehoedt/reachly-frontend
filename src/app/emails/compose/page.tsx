@@ -64,27 +64,16 @@ export default function EmailComposePage() {
   const fetchEmailAccounts = async () => {
     try {
       const response = await api.get('/emails/accounts');
-      console.log('API Response:', response); // Debug log
-      
-      // Check if response exists and has data
-      if (response && response.data && response.data.success) {
-        setEmailAccounts(response.data.data.accounts);
+      if (response.data.success) {
+        setEmailAccounts(response.data.accounts);
         // Auto-select first account if available
-        if (response.data.data.accounts.length > 0) {
-          setEmailData(prev => ({ ...prev, accountId: response.data.data.accounts[0].id }));
+        if (response.data.accounts.length > 0) {
+          setEmailData(prev => ({ ...prev, accountId: response.data.accounts[0].id }));
         }
-      } else {
-        console.error('Invalid API response:', response);
-        setMessage({ type: 'error', text: 'Invalid response from server' });
       }
     } catch (error) {
       console.error('Failed to fetch email accounts:', error);
-      // Check if it's an authentication error
-      if (error.status === 401) {
-        setMessage({ type: 'error', text: 'Authentication required. Please log in again.' });
-      } else {
-        setMessage({ type: 'error', text: 'Failed to load email accounts' });
-      }
+      setMessage({ type: 'error', text: 'Failed to load email accounts' });
     } finally {
       setLoadingAccounts(false);
     }
@@ -136,7 +125,7 @@ export default function EmailComposePage() {
       console.error('Email send error:', error);
       setMessage({ 
         type: 'error', 
-        text: error.data?.message || 'Failed to send email' 
+        text: error.response?.data?.message || 'Failed to send email' 
       });
     } finally {
       setSending(false);

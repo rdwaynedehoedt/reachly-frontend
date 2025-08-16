@@ -34,11 +34,7 @@ export async function apiClient(
 export const api = {
   get: async (endpoint: string) => {
     const response = await apiClient(endpoint, { method: 'GET' });
-    return {
-      data: await response.json(),
-      status: response.status,
-      ok: response.ok
-    };
+    return { data: await response.json() };
   },
   
   post: async (endpoint: string, data: any) => {
@@ -46,11 +42,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return {
-      data: await response.json(),
-      status: response.status,
-      ok: response.ok
-    };
+    return { data: await response.json() };
   },
   
   put: async (endpoint: string, data: any) => {
@@ -58,20 +50,12 @@ export const api = {
       method: 'PUT',
       body: JSON.stringify(data),
     });
-    return {
-      data: await response.json(),
-      status: response.status,
-      ok: response.ok
-    };
+    return { data: await response.json() };
   },
   
   delete: async (endpoint: string) => {
     const response = await apiClient(endpoint, { method: 'DELETE' });
-    return {
-      data: await response.json(),
-      status: response.status,
-      ok: response.ok
-    };
+    return { data: await response.json() };
   },
 };
 
@@ -79,7 +63,7 @@ export const api = {
 export const leadsApi = {
   getAll: async () => {
     const response = await api.get('/leads');
-    return response.data;
+    return response.json();
   },
   
   import: async (data: {
@@ -89,11 +73,11 @@ export const leadsApi = {
     duplicateChecks: any;
   }) => {
     const response = await api.post('/leads/import', data);
-    return response.data;
+    return response.json();
   },
   
   delete: async (leadId: string) => {
     const response = await api.delete(`/leads/${leadId}`);
-    return response.data;
+    return response.json();
   },
 };
