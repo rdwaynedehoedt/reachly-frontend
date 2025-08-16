@@ -436,7 +436,7 @@ function CampaignsContent() {
               <EnvelopeIcon className="w-4 h-4 mr-2" />
               Send Single Email
             </Button>
-            <Button onClick={() => {/* TODO: Navigate to campaign creation */}}>
+            <Button onClick={() => router.push('/campaigns/create')}>
               <PlusIcon className="w-4 h-4 mr-2" />
               Create Campaign
             </Button>
@@ -444,19 +444,26 @@ function CampaignsContent() {
         </div>
       </div>
 
-      {/* Coming Soon Message */}
+      {/* Getting Started Message */}
       <div className="bg-white shadow-lg rounded-lg p-8 text-center">
-        <MegaphoneIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Campaign Management Coming Soon!</h3>
+        <MegaphoneIcon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Create Your First Campaign?</h3>
         <p className="text-gray-600 mb-4">
-          We're building advanced campaign features. For now, you can send individual emails.
+          Build automated email sequences to engage your leads systematically.
         </p>
         <div className="space-y-3">
-          <Button onClick={() => router.push('/emails/compose')}>
-            <EnvelopeIcon className="h-4 w-4 mr-2" />
-            Compose Single Email
+          <Button onClick={() => router.push('/campaigns/create')}>
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Your First Campaign
           </Button>
-          <div>
+          <div className="flex justify-center space-x-3">
+            <Button 
+              variant="outline"
+              onClick={() => router.push('/emails/compose')}
+            >
+              <EnvelopeIcon className="h-4 w-4 mr-2" />
+              Send Single Email
+            </Button>
             <Button 
               variant="outline"
               onClick={() => router.push('/emails/history')}
