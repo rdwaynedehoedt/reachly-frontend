@@ -11,7 +11,7 @@ const getAuthHeaders = (): Record<string, string> => {
 };
 
 // Generic API client for authenticated requests
-export async function apiClient(
+async function baseApiClient(
   endpoint: string, 
   options: RequestInit = {}
 ): Promise<Response> {
@@ -30,15 +30,48 @@ export async function apiClient(
   return fetch(url, config);
 }
 
-// Convenience methods for common HTTP methods
+// Enhanced API client with convenience methods
+export const apiClient = {
+  get: async (endpoint: string) => {
+    const response = await baseApiClient(endpoint, { method: 'GET' });
+    const data = await response.json();
+    return { success: response.ok, data, message: data.message, status: response.status };
+  },
+  
+  post: async (endpoint: string, requestData: any) => {
+    const response = await baseApiClient(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(requestData),
+    });
+    const responseData = await response.json();
+    return { success: response.ok, data: responseData.data || responseData, message: responseData.message, status: response.status };
+  },
+  
+  put: async (endpoint: string, requestData: any) => {
+    const response = await baseApiClient(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(requestData),
+    });
+    const responseData = await response.json();
+    return { success: response.ok, data: responseData.data || responseData, message: responseData.message, status: response.status };
+  },
+  
+  delete: async (endpoint: string) => {
+    const response = await baseApiClient(endpoint, { method: 'DELETE' });
+    const data = await response.json();
+    return { success: response.ok, data, message: data.message, status: response.status };
+  },
+};
+
+// Convenience methods for common HTTP methods (legacy)
 export const api = {
   get: async (endpoint: string) => {
-    const response = await apiClient(endpoint, { method: 'GET' });
+    const response = await baseApiClient(endpoint, { method: 'GET' });
     return { data: await response.json() };
   },
   
   post: async (endpoint: string, data: any) => {
-    const response = await apiClient(endpoint, {
+    const response = await baseApiClient(endpoint, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -46,7 +79,7 @@ export const api = {
   },
   
   put: async (endpoint: string, data: any) => {
-    const response = await apiClient(endpoint, {
+    const response = await baseApiClient(endpoint, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
@@ -54,7 +87,7 @@ export const api = {
   },
   
   delete: async (endpoint: string) => {
-    const response = await apiClient(endpoint, { method: 'DELETE' });
+    const response = await baseApiClient(endpoint, { method: 'DELETE' });
     return { data: await response.json() };
   },
 };

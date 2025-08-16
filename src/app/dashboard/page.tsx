@@ -436,7 +436,7 @@ function CampaignsContent() {
               <EnvelopeIcon className="w-4 h-4 mr-2" />
               Send Single Email
             </Button>
-            <Button onClick={() => {/* TODO: Navigate to campaign creation */}}>
+            <Button onClick={() => router.push('/campaigns/create')}>
               <PlusIcon className="w-4 h-4 mr-2" />
               Create Campaign
             </Button>
@@ -444,24 +444,38 @@ function CampaignsContent() {
         </div>
       </div>
 
-      {/* Coming Soon Message */}
+      {/* Campaign Features */}
       <div className="bg-white shadow-lg rounded-lg p-8 text-center">
-        <MegaphoneIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Campaign Management Coming Soon!</h3>
-        <p className="text-gray-600 mb-4">
-          We're building advanced campaign features. For now, you can send individual emails.
+        <MegaphoneIcon className="h-12 w-12 text-blue-500 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Professional Email Campaigns</h3>
+        <p className="text-gray-600 mb-6">
+          Create multi-step email sequences with advanced scheduling and analytics.
         </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Multi-Step Sequences</h4>
+            <p className="text-sm text-gray-600">Create automated follow-up sequences with custom delays</p>
+          </div>
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Smart Scheduling</h4>
+            <p className="text-sm text-gray-600">Send emails at optimal times with timezone support</p>
+          </div>
+          <div className="p-4 border border-gray-200 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Advanced Analytics</h4>
+            <p className="text-sm text-gray-600">Track opens, clicks, replies, and conversion rates</p>
+          </div>
+        </div>
         <div className="space-y-3">
-          <Button onClick={() => router.push('/emails/compose')}>
-            <EnvelopeIcon className="h-4 w-4 mr-2" />
-            Compose Single Email
+          <Button onClick={() => router.push('/campaigns/create')}>
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Your First Campaign
           </Button>
           <div>
             <Button 
               variant="outline"
-              onClick={() => router.push('/emails/history')}
+              onClick={() => router.push('/campaigns')}
             >
-              View Email History
+              View All Campaigns
             </Button>
           </div>
         </div>
