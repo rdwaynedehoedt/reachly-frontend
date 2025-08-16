@@ -55,7 +55,7 @@ export default function OnboardingPage() {
         // Redirect based on the selected action
         switch (userData.completionAction) {
           case 'create_campaign':
-            router.push('/campaigns/new');
+            router.push('/dashboard');
             break;
           case 'import_contacts':
             router.push('/contacts/import');

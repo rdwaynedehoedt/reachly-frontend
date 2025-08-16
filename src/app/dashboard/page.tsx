@@ -3,8 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
-import { LoadingScreen } from '@/components/ui';
+import { LoadingScreen, Button } from '@/components/ui';
 import MobileSidebar from '@/components/ui/MobileSidebar';
+import { api } from '@/lib/apiClient';
+
 import {
   HomeIcon,
   EnvelopeIcon,
@@ -16,6 +18,17 @@ import {
   MagnifyingGlassIcon,
   EllipsisVerticalIcon,
   Bars3Icon,
+  DocumentArrowUpIcon,
+  FunnelIcon,
+  PlayIcon,
+  PauseIcon,
+  StopIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ExclamationTriangleIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  MegaphoneIcon,
 } from '@heroicons/react/24/outline';
 import {
   EnvelopeIcon as EnvelopeIconSolid,
@@ -26,6 +39,15 @@ export default function DashboardPage() {
   const { user, loading, isAuthenticated, needsOnboarding, logout } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Check for tab parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tab = urlParams.get('tab');
+    if (tab && ['dashboard', 'campaigns', 'leads', 'analytics', 'settings'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, []);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -33,6 +55,16 @@ export default function DashboardPage() {
       router.push('/login');
     } else if (!loading && isAuthenticated && needsOnboarding) {
       router.push('/onboarding');
+    }
+    
+    // Check if returning from leads import
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('tab') === 'leads') {
+        setActiveTab('leads');
+        // Clean up the URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
     }
   }, [isAuthenticated, needsOnboarding, loading, router]);
 
@@ -43,7 +75,7 @@ export default function DashboardPage() {
 
   const navigation = [
     { name: 'Dashboard', href: 'dashboard', icon: HomeIcon, current: activeTab === 'dashboard' },
-    { name: 'Campaigns', href: 'campaigns', icon: EnvelopeIcon, current: activeTab === 'campaigns' },
+    { name: 'Campaigns', href: 'campaigns', icon: MegaphoneIcon, current: activeTab === 'campaigns' },
     { name: 'Leads', href: 'leads', icon: UserGroupIcon, current: activeTab === 'leads' },
     { name: 'Analytics', href: 'analytics', icon: ChartBarIcon, current: activeTab === 'analytics' },
     { name: 'Settings', href: 'settings', icon: Cog6ToothIcon, current: activeTab === 'settings' },
@@ -69,8 +101,8 @@ export default function DashboardPage() {
       />
 
       {/* Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col">
-        <div className="flex flex-col flex-grow pt-5 bg-white overflow-y-auto shadow-sm border-r border-gray-200">
+      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
+        <div className="flex flex-col flex-grow pt-5 bg-white shadow-sm border-r border-gray-200">
           {/* Logo */}
           <div className="flex items-center flex-shrink-0 px-4 mb-8">
             <img 
@@ -85,7 +117,7 @@ export default function DashboardPage() {
           <nav className="mt-5 flex-1 px-2 space-y-1">
             {navigation.map((item) => {
               const IconComponent = item.current 
-                ? (item.name === 'Campaigns' ? EnvelopeIconSolid : item.name === 'Analytics' ? ChartBarIconSolid : item.icon)
+                ? (item.name === 'Analytics' ? ChartBarIconSolid : item.icon)
                 : item.icon;
               
               return (
@@ -133,7 +165,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden">
+      <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-64">
         {/* Top navigation */}
         <div className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
           <div className="px-4 sm:px-6 lg:px-8">
@@ -169,14 +201,7 @@ export default function DashboardPage() {
               </div>
               
               <div className="ml-4 flex items-center md:ml-6 space-x-3">
-                {/* New Campaign Button */}
-                <button
-                  type="button"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                >
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  New Campaign
-                </button>
+
                 
                 {/* Notifications */}
                 <button
@@ -388,27 +413,57 @@ function DashboardContent({ user }: { user: any }) {
 
 // Campaigns Content Component
 function CampaignsContent() {
+  const router = useRouter();
+  
   return (
     <div>
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage your email campaigns and sequences.
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Create and manage your email outreach campaigns.
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <Button 
+              variant="outline"
+              onClick={() => router.push('/emails/compose')}
+              className="text-sm"
+            >
+              <EnvelopeIcon className="w-4 h-4 mr-2" />
+              Send Single Email
+            </Button>
+            <Button onClick={() => {/* TODO: Navigate to campaign creation */}}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Create Campaign
+            </Button>
+          </div>
+        </div>
       </div>
-      
-      <div className="bg-white shadow-sm rounded-lg p-6 text-center">
-        <EnvelopeIcon className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No campaigns</h3>
-        <p className="mt-1 text-sm text-gray-500">Get started by creating your first campaign.</p>
-        <div className="mt-6">
-          <button
-            type="button"
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Create Campaign
-          </button>
+
+      {/* Coming Soon Message */}
+      <div className="bg-white shadow-lg rounded-lg p-8 text-center">
+        <MegaphoneIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Campaign Management Coming Soon!</h3>
+        <p className="text-gray-600 mb-4">
+          We're building advanced campaign features. For now, you can send individual emails.
+        </p>
+        <div className="space-y-3">
+          <Button onClick={() => router.push('/emails/compose')}>
+            <EnvelopeIcon className="h-4 w-4 mr-2" />
+            Compose Single Email
+          </Button>
+          <div>
+            <Button 
+              variant="outline"
+              onClick={() => router.push('/emails/history')}
+            >
+              View Email History
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -417,29 +472,454 @@ function CampaignsContent() {
 
 // Leads Content Component  
 function LeadsContent() {
+  const router = useRouter();
+  const [leads, setLeads] = useState<any[]>([]);
+  const [loadingLeads, setLoadingLeads] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [leadsPerPage, setLeadsPerPage] = useState(50);
+  const [selectedList, setSelectedList] = useState('all');
+
+  useEffect(() => {
+    fetchLeads();
+  }, []);
+
+  const fetchLeads = async () => {
+    setLoadingLeads(true);
+    try {
+      const data = await import('@/lib/apiClient').then(({ leadsApi }) => leadsApi.getAll());
+      
+      if (data.success) {
+        // Transform backend data to frontend format
+        const transformedLeads = data.data.leads.map((lead: any) => ({
+          id: lead.id,
+          email: lead.email,
+          firstName: lead.first_name,
+          lastName: lead.last_name,
+          companyName: lead.company_name,
+          jobTitle: lead.job_title,
+          phone: lead.phone,
+          status: lead.status,
+          source: lead.source,
+          createdAt: lead.created_at
+        }));
+        setLeads(transformedLeads);
+      } else {
+        console.error('Failed to fetch leads:', data.message);
+        setLeads([]);
+      }
+    } catch (error) {
+      console.error('Error fetching leads:', error);
+      setLeads([]);
+    } finally {
+      setLoadingLeads(false);
+    }
+  };
+
+  // Filter by list selection first
+  const listFilteredLeads = leads.filter(lead => {
+    if (selectedList === 'all') return true;
+    if (selectedList === 'recent') {
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+      return new Date(lead.createdAt) > oneWeekAgo;
+    }
+    if (selectedList === 'prospects') return lead.status === 'active';
+    if (selectedList === 'customers') return lead.status === 'replied';
+    if (selectedList === 'motor') {
+      return lead.companyName && lead.companyName.toLowerCase().includes('motor');
+    }
+    if (selectedList === 'life') {
+      return lead.companyName && lead.companyName.toLowerCase().includes('life');
+    }
+    if (selectedList === 'property') {
+      return lead.companyName && lead.companyName.toLowerCase().includes('property');
+    }
+    if (selectedList === 'health') {
+      return lead.companyName && lead.companyName.toLowerCase().includes('health');
+    }
+    return true;
+  });
+
+  // Then filter by search term
+  const filteredLeads = listFilteredLeads.filter(lead => 
+    lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${lead.firstName} ${lead.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (lead.companyName || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
+  const startIndex = (currentPage - 1) * leadsPerPage;
+  const endIndex = startIndex + leadsPerPage;
+  const currentLeads = filteredLeads.slice(startIndex, endIndex);
+
+  // Reset to first page when search or list selection changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, leadsPerPage, selectedList]);
+  
   return (
     <div>
+      {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Import and manage your contact lists.
-        </p>
-      </div>
-      
-      <div className="bg-white shadow-sm rounded-lg p-6 text-center">
-        <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-        <h3 className="mt-2 text-sm font-medium text-gray-900">No leads</h3>
-        <p className="mt-1 text-sm text-gray-500">Import your first contact list to get started.</p>
-        <div className="mt-6">
-          <button
-            type="button"
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Import Leads
-          </button>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Import and manage your contact lists.
+            </p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <select
+              value={selectedList}
+              onChange={(e) => setSelectedList(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            >
+              <option value="all">All Leads</option>
+              <option value="recent">Recently Added</option>
+              <option value="prospects">Prospects</option>
+              <option value="customers">Customers</option>
+              <option value="motor">Motor Insurance</option>
+              <option value="life">Life Insurance</option>
+              <option value="property">Property Insurance</option>
+              <option value="health">Health Insurance</option>
+            </select>
+            <Button 
+              variant="outline"
+              onClick={() => {/* TODO: Add create list modal */}}
+              className="text-sm"
+            >
+              Create List
+            </Button>
+            <Button onClick={() => router.push('/leads/import')}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Add Leads
+            </Button>
+          </div>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UserGroupIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Total Leads
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{filteredLeads.length}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-6 w-6 bg-green-100 rounded-full flex items-center justify-center">
+                  <span className="text-green-600 font-bold text-sm">✓</span>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Active
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">
+                    {filteredLeads.filter(l => l.status === 'active').length}
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-6 w-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <span className="text-yellow-600 font-bold text-sm">✉</span>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Contacted
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">
+                    {filteredLeads.filter(l => l.status === 'contacted').length}
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-6 w-6 bg-purple-100 rounded-full flex items-center justify-center">
+                  <span className="text-purple-600 font-bold text-sm">💬</span>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Replied
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">
+                    {filteredLeads.filter(l => l.status === 'replied').length}
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Actions */}
+      <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0 lg:space-x-6">
+          <div className="flex-1 max-w-lg">
+            <label htmlFor="search" className="sr-only">Search leads</label>
+            <div className="relative">
+              <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                id="search"
+                type="text"
+                placeholder="Search leads by name, email, or company..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <div className="flex items-center space-x-2">
+              <label htmlFor="per-page" className="text-sm text-gray-700 whitespace-nowrap">Show:</label>
+              <select
+                id="per-page"
+                value={leadsPerPage}
+                onChange={(e) => setLeadsPerPage(Number(e.target.value))}
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+            <button className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+              <FunnelIcon className="w-4 h-4 mr-2" />
+              Filters
+            </button>
+          </div>
+        </div>
+        
+        {/* Filter summary */}
+        {selectedList !== 'all' && (
+          <div className="mt-4 pt-4 border-t border-gray-200">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">
+                Showing {filteredLeads.length} leads in "{selectedList}" list
+              </span>
+              <button 
+                onClick={() => setSelectedList('all')}
+                className="text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Clear filter
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Leads Table */}
+      <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+        {loadingLeads ? (
+          <div className="p-12 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading leads...</p>
+          </div>
+        ) : leads.length === 0 ? (
+          <div className="p-12 text-center">
+            <UserGroupIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No leads yet</h3>
+            <p className="text-gray-600 mb-6">
+              Get started by importing your first contacts from a CSV file.
+            </p>
+            <Button onClick={() => router.push('/leads/import')}>
+              <PlusIcon className="w-4 h-4 mr-2" />
+              Add Your First Leads
+            </Button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Contact
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Company
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Source
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Added
+                  </th>
+                  <th className="relative px-6 py-3"><span className="sr-only">Actions</span></th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {currentLeads.map((lead) => (
+                  <tr key={lead.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {lead.firstName} {lead.lastName}
+                        </div>
+                        <div className="text-sm text-gray-500">{lead.email}</div>
+                        {lead.phone && (
+                          <div className="text-sm text-gray-500">{lead.phone}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{lead.companyName || '-'}</div>
+                      {lead.jobTitle && (
+                        <div className="text-sm text-gray-500">{lead.jobTitle}</div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                        lead.status === 'active' ? 'bg-green-100 text-green-800' :
+                        lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+                        lead.status === 'replied' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {lead.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {lead.source}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {new Date(lead.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button className="text-blue-600 hover:text-blue-900">
+                        Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Pagination */}
+      {filteredLeads.length > 0 && (
+        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6 rounded-lg shadow-sm">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button
+              onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+              disabled={currentPage === 1}
+              className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to{' '}
+                <span className="font-medium">{Math.min(endIndex, filteredLeads.length)}</span> of{' '}
+                <span className="font-medium">{filteredLeads.length}</span> results
+              </p>
+            </div>
+            <div>
+              <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                <button
+                  onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Previous</span>
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+                
+                {/* Page numbers */}
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNumber;
+                  if (totalPages <= 5) {
+                    pageNumber = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNumber = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNumber = totalPages - 4 + i;
+                  } else {
+                    pageNumber = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNumber}
+                      onClick={() => setCurrentPage(pageNumber)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === pageNumber
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNumber}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <span className="sr-only">Next</span>
+                  <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
