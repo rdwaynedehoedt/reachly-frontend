@@ -13,6 +13,7 @@ export const useAuthRedirect = () => {
     }
   };
 
+  
   return { redirectAfterAuth, needsOnboarding };
 };
 
