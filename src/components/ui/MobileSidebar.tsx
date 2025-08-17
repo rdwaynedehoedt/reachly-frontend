@@ -8,6 +8,7 @@ import {
   ChartBarIcon,
   UserGroupIcon,
   Cog6ToothIcon,
+  MegaphoneIcon,
 } from '@heroicons/react/24/outline';
 import {
   EnvelopeIcon as EnvelopeIconSolid,
@@ -31,7 +32,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
 }) => {
   const navigation = [
     { name: 'Dashboard', href: 'dashboard', icon: HomeIcon, current: activeTab === 'dashboard' },
-    { name: 'Campaigns', href: 'campaigns', icon: EnvelopeIcon, current: activeTab === 'campaigns' },
+    { name: 'Campaigns', href: 'campaigns', icon: MegaphoneIcon, current: activeTab === 'campaigns' },
     { name: 'Leads', href: 'leads', icon: UserGroupIcon, current: activeTab === 'leads' },
     { name: 'Analytics', href: 'analytics', icon: ChartBarIcon, current: activeTab === 'analytics' },
     { name: 'Settings', href: 'settings', icon: Cog6ToothIcon, current: activeTab === 'settings' },
@@ -111,7 +112,7 @@ const MobileSidebar: React.FC<MobileSidebarProps> = ({
             <nav className="mt-5 px-2 space-y-1">
               {navigation.map((item) => {
                 const IconComponent = item.current 
-                  ? (item.name === 'Campaigns' ? EnvelopeIconSolid : item.name === 'Analytics' ? ChartBarIconSolid : item.icon)
+                  ? (item.name === 'Analytics' ? ChartBarIconSolid : item.icon)
                   : item.icon;
                 
                 return (

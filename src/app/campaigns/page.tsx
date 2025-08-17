@@ -1,129 +1,240 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import FadeIn from '@/components/FadeIn';
-import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
-import { apiClient } from '@/lib/apiClient';
-
-interface Campaign {
-  id: string;
-  name: string;
-  description?: string;
-  status: 'draft' | 'active' | 'paused' | 'completed' | 'archived';
-  type: 'sequence' | 'single' | 'drip';
-  total_leads: number;
-  emails_sent: number;
-  emails_opened: number;
-  emails_replied: number;
-  sequence_steps: number;
-  created_at: string;
-  created_by_first_name?: string;
-  created_by_last_name?: string;
-}
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '../../contexts/AuthContext';
+import { LoadingScreen, Button } from '@/components/ui';
+import { campaignApi, Campaign, campaignUtils } from '@/lib/campaignApi';
+import {
+  PlusIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  EllipsisVerticalIcon,
+  PlayIcon,
+  PauseIcon,
+  StopIcon,
+  ArchiveBoxIcon,
+  PencilIcon,
+  TrashIcon,
+  ChartBarIcon,
+  EyeIcon,
+  UsersIcon,
+  EnvelopeIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  MegaphoneIcon,
+} from '@heroicons/react/24/outline';
+import {
+  PlayIcon as PlayIconSolid,
+  PauseIcon as PauseIconSolid,
+} from '@heroicons/react/24/solid';
 
 export default function CampaignsPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [selectedCampaign, setSelectedCampaign] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchCampaigns();
-  }, []);
-
+  // Fetch campaigns
   const fetchCampaigns = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/campaigns');
-      if (response.success) {
+      const response = await campaignApi.getAll();
+      if (response.success && response.data?.campaigns) {
         setCampaigns(response.data.campaigns);
       } else {
-        setError('Failed to fetch campaigns');
+        console.error('Failed to fetch campaigns:', response.message);
+        setCampaigns([]); // Set empty array as fallback
       }
-    } catch (err) {
-      setError('Error loading campaigns');
-      console.error('Error fetching campaigns:', err);
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      setCampaigns([]); // Set empty array as fallback
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'paused': return 'text-yellow-600 bg-yellow-100';
-      case 'completed': return 'text-blue-600 bg-blue-100';
-      case 'archived': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCampaigns();
     }
-  };
+  }, [isAuthenticated]);
 
-  const getOpenRate = (sent: number, opened: number) => {
-    if (sent === 0) return '0%';
-    return `${((opened / sent) * 100).toFixed(1)}%`;
-  };
-
-  const getReplyRate = (sent: number, replied: number) => {
-    if (sent === 0) return '0%';
-    return `${((replied / sent) * 100).toFixed(1)}%`;
-  };
-
-  const filteredCampaigns = campaigns.filter(campaign => {
+  // Filter campaigns - add safety check
+  const filteredCampaigns = (campaigns || []).filter(campaign => {
     const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          campaign.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || campaign.status === statusFilter;
+    const matchesStatus = selectedStatus === 'all' || campaign.status === selectedStatus;
     return matchesSearch && matchesStatus;
   });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading campaigns...</p>
-        </div>
-      </div>
-    );
+  // Handle campaign actions
+  const handleStatusChange = async (campaignId: string, newStatus: Campaign['status']) => {
+    try {
+      setActionLoading(campaignId);
+      const response = await campaignApi.updateStatus(campaignId, newStatus);
+      if (response.success) {
+        await fetchCampaigns(); // Refresh the list
+      } else {
+        console.error('Failed to update status:', response.message);
+      }
+    } catch (error) {
+      console.error('Error updating status:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId: string) => {
+    if (!confirm('Are you sure you want to delete this campaign? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      setActionLoading(campaignId);
+      const response = await campaignApi.delete(campaignId);
+      if (response.success) {
+        await fetchCampaigns(); // Refresh the list
+      } else {
+        console.error('Failed to delete campaign:', response.message);
+      }
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  if (authLoading || loading) {
+    return <LoadingScreen message="Loading campaigns..." />;
+  }
+
+  if (!isAuthenticated) {
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <FadeIn>
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Email Campaigns</h1>
-                <p className="text-gray-600 mt-2">Create and manage your email marketing campaigns</p>
-              </div>
-              <Link href="/campaigns/create">
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  Create Campaign
-                </Button>
-              </Link>
-            </div>
+    <>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage your email campaigns and track performance.
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push('/campaigns/create')}
+            leftIcon={<PlusIcon className="h-4 w-4" />}
+          >
+            New Campaign
+          </Button>
+        </div>
+      </div>
 
-            {/* Filters and Search */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              <div className="flex-1">
-                <Input
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <MegaphoneIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Total Campaigns
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{campaigns?.length || 0}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <PlayIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Active Campaigns
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{(campaigns || []).filter(c => c.status === 'active').length}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UsersIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Total Leads
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{(campaigns || []).reduce((sum, c) => sum + (c.total_leads || 0), 0).toLocaleString()}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <EnvelopeIcon className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Emails Sent
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{(campaigns || []).reduce((sum, c) => sum + (c.emails_sent || 0), 0).toLocaleString()}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white shadow-sm rounded-lg mb-6">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              {/* Search */}
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
                   type="text"
                   placeholder="Search campaigns..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full"
+                  className="pl-9 pr-4 py-2 w-full sm:w-64 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
                 />
               </div>
+
+              {/* Status Filter */}
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="pr-8 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
               >
                 <option value="all">All Status</option>
                 <option value="draft">Draft</option>
@@ -134,105 +245,215 @@ export default function CampaignsPage() {
               </select>
             </div>
 
-            {error && (
-              <Card className="mb-6 p-4 border-red-200 bg-red-50">
-                <p className="text-red-700">{error}</p>
-              </Card>
-            )}
+            <div className="text-sm text-gray-500">
+              {filteredCampaigns.length} of {campaigns?.length || 0} campaigns
+            </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Campaigns Grid */}
-            {filteredCampaigns.length === 0 ? (
-              <Card className="p-12 text-center">
-                <div className="text-6xl mb-4">📧</div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No campaigns yet</h3>
-                <p className="text-gray-600 mb-6">
-                  {campaigns.length === 0 
-                    ? "Create your first email campaign to start reaching your leads"
-                    : "No campaigns match your current filters"
-                  }
-                </p>
-                {campaigns.length === 0 && (
-                  <Link href="/campaigns/create">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                      Create Your First Campaign
-                    </Button>
-                  </Link>
-                )}
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCampaigns.map((campaign) => (
-                  <Card key={campaign.id} className="p-6 hover:shadow-lg transition-shadow">
-                    <div className="flex justify-between items-start mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {campaign.name}
-                        </h3>
-                        {campaign.description && (
-                          <p className="text-gray-600 text-sm line-clamp-2">
-                            {campaign.description}
-                          </p>
-                        )}
-                      </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                        {campaign.status}
-                      </span>
-                    </div>
+      {/* Campaigns List */}
+      {filteredCampaigns.length === 0 ? (
+        <EmptyState onCreateCampaign={() => router.push('/campaigns/create')} />
+      ) : (
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="space-y-6">
+              {filteredCampaigns.map((campaign) => (
+                <CampaignCard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteCampaign}
+                  onEdit={() => router.push(`/campaigns/${campaign.id}/edit`)}
+                  onView={() => router.push(`/campaigns/${campaign.id}`)}
+                  onAnalytics={() => router.push(`/campaigns/${campaign.id}/analytics`)}
+                  loading={actionLoading === campaign.id}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
-                    <div className="space-y-3 mb-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Leads</span>
-                        <span className="font-medium">{campaign.total_leads}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Steps</span>
-                        <span className="font-medium">{campaign.sequence_steps}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Emails Sent</span>
-                        <span className="font-medium">{campaign.emails_sent}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Open Rate</span>
-                        <span className="font-medium text-green-600">
-                          {getOpenRate(campaign.emails_sent, campaign.emails_opened)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Reply Rate</span>
-                        <span className="font-medium text-blue-600">
-                          {getReplyRate(campaign.emails_sent, campaign.emails_replied)}
-                        </span>
-                      </div>
-                    </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
-                      <Link href={`/campaigns/${campaign.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full">
-                          View Details
-                        </Button>
-                      </Link>
-                      <Link href={`/campaigns/${campaign.id}/edit`} className="flex-1">
-                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                          Edit
-                        </Button>
-                      </Link>
-                    </div>
 
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <p className="text-xs text-gray-500">
-                        Created {new Date(campaign.created_at).toLocaleDateString()}
-                        {campaign.created_by_first_name && (
-                          <> by {campaign.created_by_first_name} {campaign.created_by_last_name}</>
-                        )}
-                      </p>
-                    </div>
-                  </Card>
-                ))}
+// Campaign Card Component
+interface CampaignCardProps {
+  campaign: Campaign;
+  onStatusChange: (id: string, status: Campaign['status']) => void;
+  onDelete: (id: string) => void;
+  onEdit: () => void;
+  onView: () => void;
+  onAnalytics: () => void;
+  loading: boolean;
+}
+
+function CampaignCard({ campaign, onStatusChange, onDelete, onEdit, onView, onAnalytics, loading }: CampaignCardProps) {
+  const [showActions, setShowActions] = useState(false);
+
+  const getStatusButton = () => {
+    if (campaign.status === 'draft') {
+      return (
+        <Button
+          size="sm"
+          onClick={() => onStatusChange(campaign.id, 'active')}
+          leftIcon={<PlayIcon className="h-4 w-4" />}
+          disabled={loading}
+        >
+          Launch
+        </Button>
+      );
+    }
+    if (campaign.status === 'active') {
+      return (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onStatusChange(campaign.id, 'paused')}
+          leftIcon={<PauseIcon className="h-4 w-4" />}
+          disabled={loading}
+        >
+          Pause
+        </Button>
+      );
+    }
+    if (campaign.status === 'paused') {
+      return (
+        <Button
+          size="sm"
+          onClick={() => onStatusChange(campaign.id, 'active')}
+          leftIcon={<PlayIcon className="h-4 w-4" />}
+          disabled={loading}
+        >
+          Resume
+        </Button>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+      <div className="flex items-start justify-between">
+        {/* Campaign Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-3 mb-2">
+            <h3 className="text-lg font-medium text-gray-900 truncate">
+              {campaign.name}
+            </h3>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${campaignUtils.getStatusColor(campaign.status)}`}>
+              {campaign.status}
+            </span>
+          </div>
+          
+          {campaign.description && (
+            <p className="text-gray-600 text-sm mb-3">{campaign.description}</p>
+          )}
+
+          {/* Metrics */}
+          <div className="grid grid-cols-4 gap-4 mb-4">
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.total_leads || 0}</div>
+              <div className="text-xs text-gray-500">Leads</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.emails_sent || 0}</div>
+              <div className="text-xs text-gray-500">Sent</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.emails_opened || 0}</div>
+              <div className="text-xs text-gray-500">Opened</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.emails_clicked || 0}</div>
+              <div className="text-xs text-gray-500">Clicked</div>
+            </div>
+          </div>
+
+          {/* Meta Info */}
+          <div className="text-sm text-gray-500">
+            Created {campaignUtils.formatDate(campaign.created_at)} • From: {campaign.from_email}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center space-x-3 ml-4">
+          {getStatusButton()}
+          
+          <div className="relative">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowActions(!showActions)}
+              disabled={loading}
+            >
+              <EllipsisVerticalIcon className="h-4 w-4" />
+            </Button>
+
+            {showActions && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                <button
+                  onClick={() => { onView(); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                  <span>View Details</span>
+                </button>
+                <button
+                  onClick={() => { onEdit(); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  <span>Edit Campaign</span>
+                </button>
+                <button
+                  onClick={() => { onAnalytics(); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <ChartBarIcon className="h-4 w-4" />
+                  <span>View Analytics</span>
+                </button>
+                <div className="border-t border-gray-100 my-1" />
+                <button
+                  onClick={() => { onDelete(campaign.id); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  <span>Delete Campaign</span>
+                </button>
               </div>
             )}
           </div>
-        </FadeIn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Empty State Component
+interface EmptyStateProps {
+  onCreateCampaign: () => void;
+}
+
+function EmptyState({ onCreateCampaign }: EmptyStateProps) {
+  return (
+    <div className="bg-white shadow-sm rounded-lg">
+      <div className="text-center py-12 px-6">
+        <MegaphoneIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
+        <p className="text-gray-500 mb-6 max-w-md mx-auto">
+          Get started by creating your first email campaign. You can import leads, customize templates, and track performance all in one place.
+        </p>
+        <Button
+          onClick={onCreateCampaign}
+          leftIcon={<PlusIcon className="h-4 w-4" />}
+        >
+          Create Your First Campaign
+        </Button>
       </div>
     </div>
   );

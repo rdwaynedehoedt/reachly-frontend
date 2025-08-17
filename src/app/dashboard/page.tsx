@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { LoadingScreen, Button } from '@/components/ui';
 import MobileSidebar from '@/components/ui/MobileSidebar';
 import { api } from '@/lib/apiClient';
+import { campaignApi, Campaign, campaignUtils } from '@/lib/campaignApi';
 
 import {
   HomeIcon,
@@ -29,6 +30,12 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   MegaphoneIcon,
+  UsersIcon,
+  EyeIcon,
+  PencilIcon,
+  TrashIcon,
+  ArchiveBoxIcon,
+  RocketLaunchIcon,
 } from '@heroicons/react/24/outline';
 import {
   EnvelopeIcon as EnvelopeIconSolid,
@@ -193,7 +200,7 @@ export default function DashboardPage() {
                       id="search"
                       name="search"
                       className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="Search campaigns, leads..."
+                      placeholder="Search leads..."
                       type="search"
                     />
                   </div>
@@ -251,7 +258,7 @@ function DashboardContent({ user }: { user: any }) {
           Welcome back, {user?.firstName}!
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Here's what's happening with your campaigns today.
+          Here's what's happening with your leads today.
         </p>
       </div>
 
@@ -351,7 +358,7 @@ function DashboardContent({ user }: { user: any }) {
                     <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                       <div>
                         <p className="text-sm text-gray-500">
-                          Campaign <span className="font-medium text-gray-900">"Q1 Outreach"</span> sent to 45 leads
+                          Email <span className="font-medium text-gray-900">"Q1 Outreach"</span> sent to 45 leads
                         </p>
                       </div>
                       <div className="text-right text-sm whitespace-nowrap text-gray-500">
@@ -393,7 +400,7 @@ function DashboardContent({ user }: { user: any }) {
                     <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
                       <div>
                         <p className="text-sm text-gray-500">
-                          Campaign performance report generated for last 7 days
+                          Email performance report generated for last 7 days
                         </p>
                       </div>
                       <div className="text-right text-sm whitespace-nowrap text-gray-500">
@@ -411,78 +418,7 @@ function DashboardContent({ user }: { user: any }) {
   );
 }
 
-// Campaigns Content Component
-function CampaignsContent() {
-  const router = useRouter();
-  
-  return (
-    <div>
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Create and manage your email outreach campaigns.
-            </p>
-          </div>
-          
-          <div className="flex items-center space-x-3">
-            <Button 
-              variant="outline"
-              onClick={() => router.push('/emails/compose')}
-              className="text-sm"
-            >
-              <EnvelopeIcon className="w-4 h-4 mr-2" />
-              Send Single Email
-            </Button>
-            <Button onClick={() => router.push('/campaigns/create')}>
-              <PlusIcon className="w-4 h-4 mr-2" />
-              Create Campaign
-            </Button>
-          </div>
-        </div>
-      </div>
 
-      {/* Campaign Features */}
-      <div className="bg-white shadow-lg rounded-lg p-8 text-center">
-        <MegaphoneIcon className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">Professional Email Campaigns</h3>
-        <p className="text-gray-600 mb-6">
-          Create multi-step email sequences with advanced scheduling and analytics.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="p-4 border border-gray-200 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Multi-Step Sequences</h4>
-            <p className="text-sm text-gray-600">Create automated follow-up sequences with custom delays</p>
-          </div>
-          <div className="p-4 border border-gray-200 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Smart Scheduling</h4>
-            <p className="text-sm text-gray-600">Send emails at optimal times with timezone support</p>
-          </div>
-          <div className="p-4 border border-gray-200 rounded-lg">
-            <h4 className="font-medium text-gray-900 mb-2">Advanced Analytics</h4>
-            <p className="text-sm text-gray-600">Track opens, clicks, replies, and conversion rates</p>
-          </div>
-        </div>
-        <div className="space-y-3">
-          <Button onClick={() => router.push('/campaigns/create')}>
-            <PlusIcon className="h-4 w-4 mr-2" />
-            Create Your First Campaign
-          </Button>
-          <div>
-            <Button 
-              variant="outline"
-              onClick={() => router.push('/campaigns')}
-            >
-              View All Campaigns
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Leads Content Component  
 function LeadsContent() {
@@ -945,14 +881,14 @@ function AnalyticsContent() {
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Track your campaign performance and metrics.
+          Track your email performance and metrics.
         </p>
       </div>
       
       <div className="bg-white shadow-sm rounded-lg p-6 text-center">
         <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
         <h3 className="mt-2 text-sm font-medium text-gray-900">No data yet</h3>
-        <p className="mt-1 text-sm text-gray-500">Start sending campaigns to see your analytics here.</p>
+        <p className="mt-1 text-sm text-gray-500">Start sending emails to see your analytics here.</p>
       </div>
     </div>
   );
@@ -976,7 +912,7 @@ function SettingsContent() {
             <label className="block text-sm font-medium text-gray-700">Email Notifications</label>
             <div className="mt-1">
               <input type="checkbox" className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200" />
-              <span className="ml-2 text-sm text-gray-600">Receive email notifications for campaign updates</span>
+              <span className="ml-2 text-sm text-gray-600">Receive email notifications for email updates</span>
             </div>
           </div>
           <div>
@@ -986,6 +922,449 @@ function SettingsContent() {
               <option>EST</option>
               <option>PST</option>
             </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Campaigns Content Component
+function CampaignsContent() {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuth();
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedStatus, setSelectedStatus] = useState('all');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchCampaigns();
+    }
+  }, [isAuthenticated]);
+
+  const fetchCampaigns = async () => {
+    try {
+      setLoading(true);
+      const response = await campaignApi.getAll();
+      
+      if (response && response.success && response.data?.campaigns) {
+        setCampaigns(response.data.campaigns);
+      } else {
+        console.error('Failed to fetch campaigns:', response?.message || 'Unknown error');
+        setCampaigns([]);
+      }
+    } catch (error) {
+      console.error('Error fetching campaigns:', error);
+      setCampaigns([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusChange = async (id: string, status: Campaign['status']) => {
+    try {
+      setActionLoading(id);
+      const response = await campaignApi.updateStatus(id, status);
+      if (response.success) {
+        setCampaigns(campaigns.map(c => 
+          c.id === id ? { ...c, status } : c
+        ));
+      }
+    } catch (error) {
+      console.error('Error updating campaign status:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleDeleteCampaign = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this campaign?')) {
+      return;
+    }
+    
+    try {
+      setActionLoading(id);
+      const response = await campaignApi.delete(id);
+      if (response.success) {
+        setCampaigns(campaigns.filter(c => c.id !== id));
+      }
+    } catch (error) {
+      console.error('Error deleting campaign:', error);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleLaunchCampaign = async (id: string) => {
+    if (!confirm('Are you sure you want to send emails for this campaign?')) {
+      return;
+    }
+    
+    try {
+      setActionLoading(id);
+      const response = await campaignApi.launch(id);
+      if (response.success) {
+        alert(`Campaign launched successfully! ${response.data.sentCount} emails sent.`);
+        fetchCampaigns(); // Refresh the list to update stats
+      } else {
+        alert(`Failed to launch campaign: ${response.message}`);
+      }
+    } catch (error) {
+      console.error('Error launching campaign:', error);
+      alert('Failed to launch campaign');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const filteredCampaigns = (campaigns || []).filter(campaign => {
+    const matchesSearch = campaign.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = selectedStatus === 'all' || campaign.status === selectedStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  if (loading) {
+    return <LoadingScreen message="Loading campaigns..." />;
+  }
+
+  return (
+    <>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage your email campaigns and track performance.
+            </p>
+          </div>
+          <Button
+            onClick={() => router.push('/campaigns/create')}
+            leftIcon={<PlusIcon className="h-4 w-4" />}
+          >
+            New Campaign
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <MegaphoneIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Total Campaigns
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{campaigns?.length || 0}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <PlayIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Active Campaigns
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{(campaigns || []).filter(c => c.status === 'active').length}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <UsersIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Total Leads
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{(campaigns || []).reduce((sum, c) => sum + (c.total_leads || 0), 0).toLocaleString()}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <EnvelopeIcon className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Emails Sent
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">{(campaigns || []).reduce((sum, c) => sum + (c.emails_sent || 0), 0).toLocaleString()}</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white shadow-sm rounded-lg mb-6">
+        <div className="px-4 py-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              {/* Search */}
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search campaigns..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9 pr-4 py-2 w-full sm:w-64 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              {/* Status Filter */}
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                className="pr-8 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
+              >
+                <option value="all">All Status</option>
+                <option value="draft">Draft</option>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+                <option value="completed">Completed</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+
+            <div className="text-sm text-gray-500">
+              {filteredCampaigns.length} of {campaigns?.length || 0} campaigns
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Campaigns List */}
+      {filteredCampaigns.length === 0 ? (
+        <div className="bg-white shadow-sm rounded-lg">
+          <div className="text-center py-12 px-6">
+            <MegaphoneIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
+            <p className="text-gray-500 mb-6 max-w-md mx-auto">
+              Get started by creating your first email campaign. You can import leads, customize templates, and track performance all in one place.
+            </p>
+            <Button
+              onClick={() => router.push('/campaigns/create')}
+              leftIcon={<PlusIcon className="h-4 w-4" />}
+            >
+              Create Your First Campaign
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          <div className="px-4 py-5 sm:p-6">
+            <div className="space-y-6">
+              {filteredCampaigns.map((campaign) => (
+                <CampaignCardDashboard
+                  key={campaign.id}
+                  campaign={campaign}
+                  onStatusChange={handleStatusChange}
+                  onDelete={handleDeleteCampaign}
+                  onEdit={() => alert('Campaign editing coming soon!')}
+                  onView={() => alert('Campaign details coming soon!')}
+                  onAnalytics={() => alert('Campaign analytics coming soon!')}
+                  onLaunch={handleLaunchCampaign}
+                  loading={actionLoading === campaign.id}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// Campaign Card Component for Dashboard
+interface CampaignCardDashboardProps {
+  campaign: Campaign;
+  onStatusChange: (id: string, status: Campaign['status']) => void;
+  onDelete: (id: string) => void;
+  onEdit: () => void;
+  onView: () => void;
+  onAnalytics: () => void;
+  onLaunch: (id: string) => void;
+  loading: boolean;
+}
+
+function CampaignCardDashboard({ campaign, onStatusChange, onDelete, onEdit, onView, onAnalytics, onLaunch, loading }: CampaignCardDashboardProps) {
+  const [showActions, setShowActions] = useState(false);
+
+  const getStatusButton = () => {
+    if (campaign.status === 'draft') {
+      return (
+        <Button
+          size="sm"
+          onClick={() => onStatusChange(campaign.id, 'active')}
+          leftIcon={<PlayIcon className="h-4 w-4" />}
+          disabled={loading}
+        >
+          Launch
+        </Button>
+      );
+    }
+    if (campaign.status === 'active') {
+      return (
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => onStatusChange(campaign.id, 'paused')}
+          leftIcon={<PauseIcon className="h-4 w-4" />}
+          disabled={loading}
+        >
+          Pause
+        </Button>
+      );
+    }
+    if (campaign.status === 'paused') {
+      return (
+        <Button
+          size="sm"
+          onClick={() => onStatusChange(campaign.id, 'active')}
+          leftIcon={<PlayIcon className="h-4 w-4" />}
+          disabled={loading}
+        >
+          Resume
+        </Button>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="border-b border-gray-200 pb-6 last:border-b-0 last:pb-0">
+      <div className="flex items-start justify-between">
+        {/* Campaign Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center space-x-3 mb-2">
+            <h3 className="text-lg font-medium text-gray-900 truncate">
+              {campaign.name}
+            </h3>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${campaignUtils.getStatusColor(campaign.status)}`}>
+              {campaign.status}
+            </span>
+          </div>
+          
+          {campaign.description && (
+            <p className="text-gray-600 text-sm mb-3">{campaign.description}</p>
+          )}
+
+          {/* Metrics */}
+          <div className="grid grid-cols-4 gap-4 mb-4">
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.total_leads || 0}</div>
+              <div className="text-xs text-gray-500">Leads</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.emails_sent || 0}</div>
+              <div className="text-xs text-gray-500">Sent</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.emails_opened || 0}</div>
+              <div className="text-xs text-gray-500">Opened</div>
+            </div>
+            <div className="text-center">
+              <div className="text-sm font-medium text-gray-900">{campaign.emails_clicked || 0}</div>
+              <div className="text-xs text-gray-500">Clicked</div>
+            </div>
+          </div>
+
+          {/* Meta Info */}
+          <div className="text-sm text-gray-500">
+            Created {campaignUtils.formatDate(campaign.created_at)} • From: {campaign.from_email}
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center space-x-3 ml-4">
+          {getStatusButton()}
+          
+          <div className="relative">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowActions(!showActions)}
+              disabled={loading}
+            >
+              <EllipsisVerticalIcon className="h-4 w-4" />
+            </Button>
+
+            {showActions && (
+              <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-50">
+                {campaign.status === 'active' && (
+                  <>
+                    <button
+                      onClick={() => { onLaunch(campaign.id); setShowActions(false); }}
+                      className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-green-700 hover:bg-green-50"
+                    >
+                      <RocketLaunchIcon className="h-4 w-4" />
+                      <span>Send Emails</span>
+                    </button>
+                    <div className="border-t border-gray-100 my-1" />
+                  </>
+                )}
+                <button
+                  onClick={() => { onView(); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                  <span>View Details</span>
+                </button>
+                <button
+                  onClick={() => { onEdit(); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <PencilIcon className="h-4 w-4" />
+                  <span>Edit Campaign</span>
+                </button>
+                <button
+                  onClick={() => { onAnalytics(); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <ChartBarIcon className="h-4 w-4" />
+                  <span>View Analytics</span>
+                </button>
+                <div className="border-t border-gray-100 my-1" />
+                <button
+                  onClick={() => { onDelete(campaign.id); setShowActions(false); }}
+                  className="flex items-center space-x-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <TrashIcon className="h-4 w-4" />
+                  <span>Delete Campaign</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

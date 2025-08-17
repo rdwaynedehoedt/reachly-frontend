@@ -34,8 +34,27 @@ async function baseApiClient(
 export const apiClient = {
   get: async (endpoint: string) => {
     const response = await baseApiClient(endpoint, { method: 'GET' });
-    const data = await response.json();
-    return { success: response.ok, data, message: data.message, status: response.status };
+    
+    let data;
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      data = { message: `HTTP ${response.status}: ${response.statusText}` };
+    }
+    
+    // If backend returns its own success/data structure, use that directly
+    if (response.ok && data.success !== undefined) {
+      return data;
+    }
+    
+    return { 
+      success: response.ok, 
+      data: response.ok ? data : null, 
+      message: data.message || `HTTP ${response.status}: ${response.statusText}`, 
+      status: response.status,
+      error: response.ok ? null : data
+    };
   },
   
   post: async (endpoint: string, requestData: any) => {
@@ -43,8 +62,27 @@ export const apiClient = {
       method: 'POST',
       body: JSON.stringify(requestData),
     });
-    const responseData = await response.json();
-    return { success: response.ok, data: responseData.data || responseData, message: responseData.message, status: response.status };
+    
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      responseData = { message: `HTTP ${response.status}: ${response.statusText}` };
+    }
+    
+    // If backend returns its own success/data structure, use that directly
+    if (response.ok && responseData.success !== undefined) {
+      return responseData;
+    }
+    
+    return { 
+      success: response.ok, 
+      data: response.ok ? (responseData.data || responseData) : null, 
+      message: responseData.message || `HTTP ${response.status}: ${response.statusText}`, 
+      status: response.status,
+      error: response.ok ? null : responseData
+    };
   },
   
   put: async (endpoint: string, requestData: any) => {
@@ -52,14 +90,52 @@ export const apiClient = {
       method: 'PUT',
       body: JSON.stringify(requestData),
     });
-    const responseData = await response.json();
-    return { success: response.ok, data: responseData.data || responseData, message: responseData.message, status: response.status };
+    
+    let responseData;
+    try {
+      responseData = await response.json();
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      responseData = { message: `HTTP ${response.status}: ${response.statusText}` };
+    }
+    
+    // If backend returns its own success/data structure, use that directly
+    if (response.ok && responseData.success !== undefined) {
+      return responseData;
+    }
+    
+    return { 
+      success: response.ok, 
+      data: response.ok ? (responseData.data || responseData) : null, 
+      message: responseData.message || `HTTP ${response.status}: ${response.statusText}`, 
+      status: response.status,
+      error: response.ok ? null : responseData
+    };
   },
   
   delete: async (endpoint: string) => {
     const response = await baseApiClient(endpoint, { method: 'DELETE' });
-    const data = await response.json();
-    return { success: response.ok, data, message: data.message, status: response.status };
+    
+    let data;
+    try {
+      data = await response.json();
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      data = { message: `HTTP ${response.status}: ${response.statusText}` };
+    }
+    
+    // If backend returns its own success/data structure, use that directly
+    if (response.ok && data.success !== undefined) {
+      return data;
+    }
+    
+    return { 
+      success: response.ok, 
+      data: response.ok ? data : null, 
+      message: data.message || `HTTP ${response.status}: ${response.statusText}`, 
+      status: response.status,
+      error: response.ok ? null : data
+    };
   },
 };
 

@@ -218,7 +218,6 @@ const CSVImportInterface: React.FC = () => {
         columnMapping: mappingConfig,
         fileName: importStats?.fileName || 'unknown.csv',
         duplicateChecks: {
-          campaigns: true,
           lists: true,
           workspace: true
         }
