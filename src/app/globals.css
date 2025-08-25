@@ -323,3 +323,286 @@ input:focus, button:focus {
   border-radius: var(--border-radius-sm);
 }
 
+/* ===== RESPONSIVE UTILITIES ===== */
+
+/* Responsive container with smart padding */
+.responsive-container {
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-container {
+    max-width: 768px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-container {
+    max-width: 1024px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-container {
+    max-width: 1280px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .responsive-container {
+    max-width: 1536px;
+  }
+}
+
+@media (min-width: 1920px) {
+  .responsive-container {
+    max-width: 1800px;
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 2560px) {
+  .responsive-container {
+    max-width: 2200px;
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
+}
+
+/* Responsive text alignment */
+.text-responsive-center {
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-center {
+    text-align: left;
+  }
+}
+
+/* Responsive flex layouts */
+.flex-responsive-column {
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .flex-responsive-column {
+    flex-direction: row;
+  }
+}
+
+.flex-responsive-row {
+  flex-direction: row;
+}
+
+@media (max-width: 767px) {
+  .flex-responsive-row {
+    flex-direction: column;
+  }
+}
+
+/* Responsive grid layouts */
+.grid-responsive-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive-1 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive-1 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive-1 {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+  }
+}
+
+/* Responsive spacing utilities */
+.space-responsive > * + * {
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .space-responsive > * + * {
+    margin-top: 0;
+    margin-left: 1rem;
+  }
+}
+
+/* Responsive width utilities */
+.w-responsive-full {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .w-responsive-full {
+    width: auto;
+  }
+}
+
+/* Hide/show utilities for different screen sizes */
+.hide-on-mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .hide-on-mobile {
+    display: block;
+  }
+}
+
+.show-on-mobile {
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .show-on-mobile {
+    display: none;
+  }
+}
+
+.hide-on-desktop {
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .hide-on-desktop {
+    display: none;
+  }
+}
+
+.show-on-desktop {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .show-on-desktop {
+    display: block;
+  }
+}
+
+/* Responsive font sizes */
+.text-responsive-xs {
+  font-size: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-xs {
+    font-size: 0.875rem;
+  }
+}
+
+.text-responsive-sm {
+  font-size: 0.875rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-sm {
+    font-size: 1rem;
+  }
+}
+
+.text-responsive-base {
+  font-size: 1rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-base {
+    font-size: 1.125rem;
+  }
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-lg {
+    font-size: 1.25rem;
+  }
+}
+
+.text-responsive-xl {
+  font-size: 1.25rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-xl {
+    font-size: 1.5rem;
+  }
+}
+
+.text-responsive-2xl {
+  font-size: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-2xl {
+    font-size: 1.875rem;
+  }
+}
+
+.text-responsive-3xl {
+  font-size: 1.875rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-3xl {
+    font-size: 2.25rem;
+  }
+}
+
+/* Ultra-wide display optimizations */
+@media (min-width: 1920px) {
+  .ultra-wide-padding {
+    padding-left: 5%;
+    padding-right: 5%;
+  }
+}
+
+@media (min-width: 2560px) {
+  .ultra-wide-padding {
+    padding-left: 10%;
+    padding-right: 10%;
+  }
+}
+
+/* Improved touch targets for mobile */
+@media (max-width: 767px) {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .button-mobile {
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+  }
+}
+

@@ -107,9 +107,9 @@ export default function DashboardPage() {
         user={user}
       />
 
-      {/* Sidebar */}
-      <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex flex-col flex-grow pt-5 bg-white shadow-sm border-r border-gray-200">
+      {/* Sidebar - Responsive sizing */}
+      <div className="hidden md:flex md:w-56 lg:w-64 xl:w-72 md:flex-col md:fixed md:inset-y-0">
+        <div className="flex flex-col flex-grow pt-4 lg:pt-5 bg-white shadow-sm border-r border-gray-200">
           {/* Logo */}
           <div className="flex items-center flex-shrink-0 px-4 mb-8">
             <img 
@@ -171,70 +171,70 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-64">
+      {/* Main content - Responsive margins for different sidebar widths */}
+      <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-56 lg:ml-64 xl:ml-72">
         {/* Top navigation */}
         <div className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
           <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-16">
+            <div className="flex justify-between h-14 sm:h-16">
               <div className="flex items-center flex-1">
                 {/* Mobile menu button */}
                 <button
                   type="button"
-                  className="px-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden"
+                  className="px-2 sm:px-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
                   onClick={() => setSidebarOpen(true)}
                 >
                   <span className="sr-only">Open sidebar</span>
-                  <Bars3Icon className="h-6 w-6" aria-hidden="true" />
+                  <Bars3Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
                 </button>
-                {/* Search */}
-                <div className="w-full max-w-lg lg:max-w-xs ml-4 md:ml-0">
+                {/* Search - Responsive sizing */}
+                <div className="w-full max-w-xs sm:max-w-sm lg:max-w-xs xl:max-w-sm ml-2 sm:ml-4 md:ml-0">
                   <label htmlFor="search" className="sr-only">
                     Search
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+                    <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+                      <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                     </div>
                     <input
                       id="search"
                       name="search"
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                      placeholder="Search leads..."
+                      className="block w-full pl-8 sm:pl-10 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm min-h-[44px] touch-target"
+                      placeholder="Search..."
                       type="search"
                     />
                   </div>
                 </div>
               </div>
               
-              <div className="ml-4 flex items-center md:ml-6 space-x-3">
+              <div className="ml-2 sm:ml-4 flex items-center md:ml-6 space-x-1 sm:space-x-3">
 
                 
                 {/* Notifications */}
                 <button
                   type="button"
-                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="bg-white p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
                 >
-                  <BellIcon className="h-6 w-6" />
+                  <BellIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
 
                 {/* Profile dropdown */}
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="bg-white p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
                 >
-                  <EllipsisVerticalIcon className="h-6 w-6" />
+                  <EllipsisVerticalIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Page content */}
+        {/* Page content - Responsive layout */}
         <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8">
+          <div className="py-4 sm:py-6">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 responsive-container">
               {activeTab === 'dashboard' && <DashboardContent user={user} />}
               {activeTab === 'campaigns' && <CampaignsContent />}
               {activeTab === 'leads' && <LeadsContent />}
@@ -252,30 +252,30 @@ export default function DashboardPage() {
 function DashboardContent({ user }: { user: any }) {
   return (
     <>
-      {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">
+      {/* Welcome Header - Responsive */}
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
           Welcome back, {user?.firstName}!
         </h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm sm:text-base text-gray-500">
           Here's what's happening with your leads today.
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+      {/* Stats - Responsive grid */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8 auto-fit-responsive">
         <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <EnvelopeIconSolid className="h-6 w-6 text-blue-600" />
+                <EnvelopeIconSolid className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     Emails Sent
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">1,247</dd>
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">1,247</dd>
                 </dl>
               </div>
             </div>
@@ -283,17 +283,17 @@ function DashboardContent({ user }: { user: any }) {
         </div>
 
         <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <ChartBarIconSolid className="h-6 w-6 text-green-600" />
+                <ChartBarIconSolid className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     Open Rate
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">24.3%</dd>
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">24.3%</dd>
                 </dl>
               </div>
             </div>
@@ -301,17 +301,17 @@ function DashboardContent({ user }: { user: any }) {
         </div>
 
         <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <UserGroupIcon className="h-6 w-6 text-purple-600" />
+                <UserGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     Reply Rate
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">8.1%</dd>
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">8.1%</dd>
                 </dl>
               </div>
             </div>
@@ -319,19 +319,19 @@ function DashboardContent({ user }: { user: any }) {
         </div>
 
         <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
+          <div className="p-3 sm:p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <div className="h-6 w-6 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 font-bold text-sm">$</span>
+                <div className="h-5 w-5 sm:h-6 sm:w-6 bg-yellow-100 rounded-full flex items-center justify-center">
+                  <span className="text-yellow-600 font-bold text-xs sm:text-sm">$</span>
                 </div>
               </div>
-              <div className="ml-5 w-0 flex-1">
+              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
+                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
                     Opportunities
                   </dt>
-                  <dd className="text-lg font-medium text-gray-900">$12,500</dd>
+                  <dd className="text-base sm:text-lg font-medium text-gray-900">$12,500</dd>
                 </dl>
               </div>
             </div>

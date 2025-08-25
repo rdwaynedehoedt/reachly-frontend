@@ -77,19 +77,29 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-white">
-      {/* Left Panel - Simple Signup Form (40%) */}
-      <div className="flex-[2] flex flex-col justify-center items-center p-8">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
+      {/* Left Panel - Simple Signup Form - Mobile first, responsive design */}
+      <div className="flex-1 lg:flex-[2] flex flex-col justify-center items-center p-4 sm:p-6 md:p-8 min-h-screen lg:min-h-auto">
+        {/* Mobile Logo - Only shown on small screens */}
+        <div className="lg:hidden flex items-center justify-center mb-8">
+          <img
+            src="/logo with no background no nae just logo.png"
+            alt="Reachly Logo"
+            className="h-8 w-auto mr-2"
+          />
+          <span className="text-lg font-bold" style={{ color: '#1876d3' }}>Reachly</span>
+        </div>
+        
         <div className="w-full max-w-sm">
           {/* Header */}
           <FadeIn delay={200}>
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Create your account</h2>
-              <p className="text-gray-600">
+            <div className="text-center mb-6 md:mb-8">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Create your account</h2>
+              <p className="text-sm md:text-base text-gray-600">
                 Already have an account?{' '}
                 <Link
                   href="/login"
-                  className="font-medium transition-colors duration-200 hover:underline"
+                  className="font-medium transition-colors duration-200 hover:underline touch-target"
                   style={{ color: '#1876d3' }}
                 >
                   Sign in
@@ -110,7 +120,7 @@ export default function SignupPage() {
               <button
                 onClick={() => {/* placeholder for future Microsoft signin */}}
                 disabled={isLoading}
-                className="w-full flex items-center justify-center px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-all duration-200 disabled:opacity-50"
+                className="w-full flex items-center justify-center px-4 py-3 md:py-3 sm:py-4 bg-gray-100 hover:bg-gray-200 rounded-md text-gray-800 font-medium transition-all duration-200 disabled:opacity-50 min-h-[44px] touch-target"
               >
                 <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
                   <path fill="#F25022" d="M1 1h10v10H1z"/>
@@ -118,7 +128,7 @@ export default function SignupPage() {
                   <path fill="#7FBA00" d="M1 13h10v10H1z"/>
                   <path fill="#FFB900" d="M13 13h10v10H13z"/>
                 </svg>
-                Continue with Microsoft
+                <span className="text-sm md:text-base">Continue with Microsoft</span>
               </button>
             </div>
           </FadeIn>
@@ -153,7 +163,7 @@ export default function SignupPage() {
                   placeholder="Full Name"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
+                  className="w-full px-3 py-3 md:py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent text-sm md:text-base min-h-[44px] touch-target"
                   style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
@@ -165,7 +175,7 @@ export default function SignupPage() {
                   placeholder="Company (Optional)"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
+                  className="w-full px-3 py-3 md:py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent text-sm md:text-base min-h-[44px] touch-target"
                   style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                 />
               </div>
@@ -176,7 +186,7 @@ export default function SignupPage() {
                   placeholder="Work Email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
+                  className="w-full px-3 py-3 md:py-3 sm:py-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent text-sm md:text-base min-h-[44px] touch-target"
                   style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
@@ -188,14 +198,14 @@ export default function SignupPage() {
                   placeholder="Create Password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-3 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent"
+                  className="w-full px-3 py-3 md:py-3 sm:py-4 pr-12 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:border-transparent text-sm md:text-base min-h-[44px] touch-target"
                   style={{ '--tw-ring-color': '#1876d3' } as React.CSSProperties}
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
                 >
                   {showPassword ? (
                     <EyeSlashIcon className="h-5 w-5" />
@@ -209,26 +219,26 @@ export default function SignupPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full text-white font-bold py-3 px-4 rounded-md transition-all duration-200 disabled:opacity-50 hover:shadow-lg transform hover:scale-[1.02]"
+                className="w-full text-white font-bold py-3 md:py-3 sm:py-4 px-4 rounded-md transition-all duration-200 disabled:opacity-50 hover:shadow-lg transform hover:scale-[1.02] text-sm md:text-base min-h-[44px] touch-target"
                 style={{ backgroundColor: '#1876d3' }}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1565c0'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1876d3'}
               >
-{isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? 'Creating Account...' : 'Create Account'}
               </button>
             </form>
           </FadeIn>
 
           {/* Footer */}
           <FadeIn delay={600}>
-            <div className="mt-6 text-xs text-gray-500 text-center space-y-2">
+            <div className="mt-6 text-xs md:text-sm text-gray-500 text-center space-y-2">
               <p>
                 By creating an account, you agree to our{' '}
-                <Link href="/terms" className="transition-colors duration-200 hover:underline" style={{ color: '#1876d3' }}>
+                <Link href="/terms" className="transition-colors duration-200 hover:underline touch-target" style={{ color: '#1876d3' }}>
                   Terms of Service
                 </Link>{' '}
                 and{' '}
-                <Link href="/privacy" className="transition-colors duration-200 hover:underline" style={{ color: '#1876d3' }}>
+                <Link href="/privacy" className="transition-colors duration-200 hover:underline touch-target" style={{ color: '#1876d3' }}>
                   Privacy Policy
                 </Link>
               </p>
@@ -238,7 +248,7 @@ export default function SignupPage() {
                   href="https://t3xlk.com/"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-blue-600 transition-colors duration-200"
+                  className="text-gray-500 hover:text-blue-600 transition-colors duration-200 touch-target"
                 >
                   T3X LK
                 </a>
@@ -248,30 +258,30 @@ export default function SignupPage() {
         </div>
       </div>
 
-      {/* Right Panel - Marketing Content (60%) */}
-      <div className="flex-[3] bg-gray-50 flex flex-col justify-center items-center p-12">
+      {/* Right Panel - Marketing Content - Hidden on mobile, shown on lg+ screens */}
+      <div className="hidden lg:flex lg:flex-[3] bg-gray-50 flex-col justify-center items-center p-6 xl:p-12">
         <FadeIn>
-          <div className="text-center max-w-lg">
+          <div className="text-center max-w-lg xl:max-w-xl">
             {/* Logo */}
-            <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center justify-center mb-6 xl:mb-8">
               <img
                 src="/logo with no background no nae just logo.png"
                 alt="Reachly Logo"
-                className="h-12 w-auto mr-3"
+                className="h-10 xl:h-12 w-auto mr-3"
               />
-              <span className="text-2xl font-bold" style={{ color: '#1876d3' }}>Reachly</span>
+              <span className="text-xl xl:text-2xl font-bold" style={{ color: '#1876d3' }}>Reachly</span>
             </div>
 
             {/* Big Number */}
-            <div className="text-6xl font-bold mb-6" style={{ color: '#1876d3' }}>
+            <div className="text-5xl xl:text-6xl font-bold mb-4 xl:mb-6" style={{ color: '#1876d3' }}>
               1M+
             </div>
             
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl xl:text-3xl font-bold text-gray-900 mb-3 xl:mb-4">
               Email marketers trust Reachly
             </h1>
 
-            <p className="text-gray-600 mb-8 text-lg leading-relaxed">
+            <p className="text-gray-600 mb-6 xl:mb-8 text-base xl:text-lg leading-relaxed">
               Create engaging campaigns, automate email sequences, and grow your audience with AI-powered email marketing tools.
             </p>
 

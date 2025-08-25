@@ -7,7 +7,7 @@ const cn = (...classes: (string | undefined | boolean)[]) => {
 };
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 touch-target',
   {
     variants: {
       variant: {
@@ -20,19 +20,23 @@ const buttonVariants = cva(
         success: 'bg-[var(--color-success)] text-white hover:bg-[#1b5e20] hover:shadow-lg focus-visible:ring-[var(--color-success)]',
       },
       size: {
-        sm: 'h-8 px-3 text-xs',
-        md: 'h-10 px-4 py-2 text-sm',
-        lg: 'h-12 px-6 py-3 text-base',
-        xl: 'h-14 px-8 py-4 text-lg',
+        sm: 'h-8 px-3 text-xs min-h-[32px]',
+        md: 'h-10 px-4 py-2 text-sm min-h-[40px]',
+        lg: 'h-12 px-6 py-3 text-base min-h-[44px]',
+        xl: 'h-14 px-8 py-4 text-lg min-h-[56px]',
       },
       fullWidth: {
         true: 'w-full',
+      },
+      responsive: {
+        true: 'text-sm sm:text-base md:text-lg px-4 sm:px-6 md:px-8 py-2 sm:py-3 md:py-4',
       },
     },
     defaultVariants: {
       variant: 'primary',
       size: 'md',
       fullWidth: false,
+      responsive: false,
     },
   }
 );
@@ -42,16 +46,17 @@ export interface ButtonProps
   variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'link' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg' | 'xl';
   fullWidth?: boolean;
+  responsive?: boolean;
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, fullWidth, isLoading, leftIcon, rightIcon, children, ...props }, ref) => {
+  ({ className, variant, size, fullWidth, responsive, isLoading, leftIcon, rightIcon, children, ...props }, ref) => {
     return (
       <button
-        className={cn(buttonVariants({ variant, size, fullWidth, className }))}
+        className={cn(buttonVariants({ variant, size, fullWidth, responsive, className }))}
         ref={ref}
         disabled={isLoading || props.disabled}
         {...props}

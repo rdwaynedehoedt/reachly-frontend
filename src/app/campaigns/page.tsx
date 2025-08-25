@@ -121,20 +121,20 @@ export default function CampaignsPage() {
   return (
     <>
       {/* Header */}
-      <div className="mb-8">
+          <div className="mb-8">
         <div className="flex items-center justify-between">
-          <div>
+              <div>
             <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
             <p className="mt-1 text-sm text-gray-500">
               Manage your email campaigns and track performance.
             </p>
-          </div>
+              </div>
           <Button
             onClick={() => router.push('/campaigns/create')}
             leftIcon={<PlusIcon className="h-4 w-4" />}
           >
             New Campaign
-          </Button>
+                </Button>
         </div>
       </div>
 
@@ -211,7 +211,7 @@ export default function CampaignsPage() {
             </div>
           </div>
         </div>
-      </div>
+            </div>
 
       {/* Filters */}
       <div className="bg-white shadow-sm rounded-lg mb-6">
@@ -330,7 +330,7 @@ function CampaignCard({ campaign, onStatusChange, onDelete, onEdit, onView, onAn
           disabled={loading}
         >
           Resume
-        </Button>
+                    </Button>
       );
     }
     return null;
@@ -343,13 +343,13 @@ function CampaignCard({ campaign, onStatusChange, onDelete, onEdit, onView, onAn
         <div className="flex-1 min-w-0">
           <div className="flex items-center space-x-3 mb-2">
             <h3 className="text-lg font-medium text-gray-900 truncate">
-              {campaign.name}
-            </h3>
+                          {campaign.name}
+                        </h3>
             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${campaignUtils.getStatusColor(campaign.status)}`}>
-              {campaign.status}
-            </span>
-          </div>
-          
+                        {campaign.status}
+                      </span>
+                    </div>
+
           {campaign.description && (
             <p className="text-gray-600 text-sm mb-3">{campaign.description}</p>
           )}
@@ -359,26 +359,26 @@ function CampaignCard({ campaign, onStatusChange, onDelete, onEdit, onView, onAn
             <div className="text-center">
               <div className="text-sm font-medium text-gray-900">{campaign.total_leads || 0}</div>
               <div className="text-xs text-gray-500">Leads</div>
-            </div>
+                      </div>
             <div className="text-center">
               <div className="text-sm font-medium text-gray-900">{campaign.emails_sent || 0}</div>
               <div className="text-xs text-gray-500">Sent</div>
-            </div>
+                      </div>
             <div className="text-center">
               <div className="text-sm font-medium text-gray-900">{campaign.emails_opened || 0}</div>
               <div className="text-xs text-gray-500">Opened</div>
-            </div>
+                      </div>
             <div className="text-center">
               <div className="text-sm font-medium text-gray-900">{campaign.emails_clicked || 0}</div>
               <div className="text-xs text-gray-500">Clicked</div>
-            </div>
-          </div>
+                      </div>
+                    </div>
 
           {/* Meta Info */}
           <div className="text-sm text-gray-500">
             Created {campaignUtils.formatDate(campaign.created_at)} • From: {campaign.from_email}
           </div>
-        </div>
+                    </div>
 
         {/* Actions */}
         <div className="flex items-center space-x-3 ml-4">

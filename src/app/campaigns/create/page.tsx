@@ -58,6 +58,20 @@ export default function CreateCampaignPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [leads, setLeads] = useState<any[]>([]);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [leadsPagination, setLeadsPagination] = useState({
+    page: 1,
+    limit: 50,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false
+  });
+  const [leadsFilters, setLeadsFilters] = useState({
+    search: '',
+    status: '',
+    source: ''
+  });
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -220,29 +234,61 @@ export default function CreateCampaignPage() {
   }
 
   return (
-    <>
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center space-x-4">
+    <div className="responsive-container min-h-screen">
+      {/* Header - Responsive */}
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <Button
             variant="ghost"
             onClick={() => router.push('/campaigns')}
             leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+            size="sm"
+            className="w-full sm:w-auto"
           >
             Back to Campaigns
           </Button>
-          <div className="h-6 w-px bg-gray-300" />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Create New Campaign</h1>
-            <p className="mt-1 text-sm text-gray-500">Step {currentStep} of {steps.length}</p>
+          <div className="hidden sm:block h-6 w-px bg-gray-300" />
+          <div className="text-center sm:text-left">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Create New Campaign</h1>
+            <p className="mt-1 text-sm sm:text-base text-gray-500">Step {currentStep} of {steps.length}</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+      <div className="max-w-6xl mx-auto">
+        {/* Progress Steps - Responsive */}
+        <div className="mb-6 sm:mb-8">
+          {/* Mobile: Simple Progress Bar */}
+          <div className="block sm:hidden">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-2">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  steps[currentStep - 1] ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {steps[currentStep - 1]?.icon && (() => {
+                    const IconComponent = steps[currentStep - 1].icon;
+                    return <IconComponent className="h-4 w-4" />;
+                  })()}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-blue-600">{steps[currentStep - 1]?.name}</p>
+                  <p className="text-xs text-gray-500">{steps[currentStep - 1]?.description}</p>
+                </div>
+              </div>
+              <div className="text-xs text-gray-500">
+                {currentStep}/{steps.length}
+              </div>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-1.5">
+              <div 
+                className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" 
+                style={{ width: `${(currentStep / steps.length) * 100}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Desktop: Full Stepper */}
+          <div className="hidden sm:flex items-center justify-between">
             {steps.map((step, index) => {
               const isCompleted = currentStep > step.id;
               const isCurrent = currentStep === step.id;
@@ -252,7 +298,7 @@ export default function CreateCampaignPage() {
                 <div key={step.id} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      className={`w-8 h-8 lg:w-10 lg:h-10 rounded-full flex items-center justify-center ${
                         isCompleted
                           ? 'bg-green-600 text-white'
                           : isCurrent
@@ -261,21 +307,21 @@ export default function CreateCampaignPage() {
                       }`}
                     >
                       {isCompleted ? (
-                        <CheckCircleIconSolid className="h-5 w-5" />
+                        <CheckCircleIconSolid className="h-4 w-4 lg:h-5 lg:w-5" />
                       ) : (
-                        <step.icon className="h-5 w-5" />
+                        <step.icon className="h-4 w-4 lg:h-5 lg:w-5" />
                       )}
                     </div>
                     <div className="mt-2 text-center">
-                      <p className={`text-sm font-medium ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'}`}>
+                      <p className={`text-xs lg:text-sm font-medium ${isCurrent ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'}`}>
                         {step.name}
                       </p>
-                      <p className="text-xs text-gray-400">{step.description}</p>
+                      <p className="text-xs text-gray-400 hidden lg:block">{step.description}</p>
                     </div>
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`flex-1 h-0.5 mx-4 transition-all duration-300 ${
+                      className={`flex-1 h-0.5 mx-2 lg:mx-4 transition-all duration-300 ${
                         isCompleted ? 'bg-green-500' : 'bg-gray-200'
                       }`}
                     />
@@ -286,9 +332,9 @@ export default function CreateCampaignPage() {
           </div>
         </div>
 
-        {/* Step Content */}
+        {/* Step Content - Responsive padding */}
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="p-8">
+          <div className="p-4 sm:p-6 lg:p-8">
             {currentStep === 1 && (
               <BasicInfoStep formData={formData} updateFormData={updateFormData} />
             )}
@@ -314,13 +360,15 @@ export default function CreateCampaignPage() {
             )}
           </div>
 
-          {/* Navigation */}
-          <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
+          {/* Navigation - Responsive */}
+          <div className="bg-gray-50 px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-2 sm:space-y-0">
             <Button
               variant="outline"
               onClick={prevStep}
               disabled={currentStep === 1}
               leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
+              size="lg"
+              className="w-full sm:w-auto min-h-[44px] touch-target"
             >
               Previous
             </Button>
@@ -330,19 +378,21 @@ export default function CreateCampaignPage() {
                 onClick={nextStep}
                 disabled={!canProceed()}
                 rightIcon={<ArrowRightIcon className="h-4 w-4" />}
-                className="min-w-[120px]"
+                className="w-full sm:w-auto min-w-[120px] min-h-[44px] touch-target"
+                size="lg"
               >
                 Next Step
               </Button>
             ) : (
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full sm:w-auto">
                 <Button
                   variant="outline"
                   onClick={() => handleSubmit(false)}
                   disabled={!canProceed() || loading}
                   isLoading={loading && !loading}
                   leftIcon={<CheckCircleIconSolid className="h-4 w-4" />}
-                  className="min-w-[140px]"
+                  className="w-full sm:w-auto min-w-[140px] min-h-[44px] touch-target"
+                  size="lg"
                 >
                   Create Campaign
                 </Button>
@@ -351,7 +401,8 @@ export default function CreateCampaignPage() {
                   disabled={!canProceed() || loading}
                   isLoading={loading}
                   leftIcon={<RocketLaunchIcon className="h-4 w-4" />}
-                  className="min-w-[160px] bg-green-600 hover:bg-green-700"
+                  className="w-full sm:w-auto min-w-[160px] bg-green-600 hover:bg-green-700 min-h-[44px] touch-target"
+                  size="lg"
                 >
                   Create & Launch
                 </Button>
