@@ -280,7 +280,7 @@ const GoalSelection: React.FC<GoalSelectionProps> = ({
           We'll use your input to recommend the best next steps
         </p>
         {selectedCount > 0 && (
-          <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-50 text-indigo-700">
+          <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-50 text-blue-700">
             <span className="mr-1">{selectedCount}</span> 
             {selectedCount === 1 ? 'goal' : 'goals'} selected
           </div>
@@ -302,7 +302,7 @@ const GoalSelection: React.FC<GoalSelectionProps> = ({
                   onClick={() => toggleGoal(goal.id)}
                   className={`cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
                     selectedGoals.includes(goal.id)
-                      ? 'border-indigo-600 bg-indigo-50'
+                      ? 'border-blue-600 bg-blue-50'
                       : 'border-gray-200 hover:border-gray-300 bg-white'
                   }`}
                 >
@@ -311,7 +311,7 @@ const GoalSelection: React.FC<GoalSelectionProps> = ({
                       {goal.icon ? (
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl ${
                           selectedGoals.includes(goal.id)
-                            ? 'bg-indigo-100'
+                            ? 'bg-blue-100'
                             : 'bg-gray-100'
                         }`}>
                           {goal.icon}
@@ -320,7 +320,7 @@ const GoalSelection: React.FC<GoalSelectionProps> = ({
                         <div
                           className={`w-6 h-6 rounded border flex items-center justify-center ${
                             selectedGoals.includes(goal.id)
-                              ? 'bg-indigo-600 border-indigo-600'
+                              ? 'bg-blue-600 border-blue-600'
                               : 'border-gray-300'
                           }`}
                         >
@@ -360,7 +360,7 @@ const GoalSelection: React.FC<GoalSelectionProps> = ({
                       <div
                         className={`w-6 h-6 rounded-full border flex items-center justify-center ${
                           selectedGoals.includes(goal.id)
-                            ? 'bg-indigo-600 border-indigo-600'
+                            ? 'bg-blue-600 border-blue-600'
                             : 'border-gray-300'
                         }`}
                       >
@@ -404,7 +404,7 @@ const GoalSelection: React.FC<GoalSelectionProps> = ({
           disabled={selectedGoals.length === 0}
           className={`px-6 py-2 rounded-md font-medium ${
             selectedGoals.length > 0
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

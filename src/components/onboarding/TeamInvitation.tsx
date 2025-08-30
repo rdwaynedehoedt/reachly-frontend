@@ -110,7 +110,7 @@ const TeamInvitation: React.FC<TeamInvitationProps> = ({
                       type="email"
                       value={invitee.email}
                       onChange={(e) => handleEmailChange(index, e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Email address"
                     />
                   </div>
@@ -118,7 +118,7 @@ const TeamInvitation: React.FC<TeamInvitationProps> = ({
                     <select
                       value={invitee.role}
                       onChange={(e) => handleRoleChange(index, e.target.value as InviteeRole)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="admin">Admin</option>
                       <option value="member">Member</option>
@@ -144,7 +144,7 @@ const TeamInvitation: React.FC<TeamInvitationProps> = ({
                       type="email"
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Add another email address"
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -158,7 +158,7 @@ const TeamInvitation: React.FC<TeamInvitationProps> = ({
                   <button
                     type="button"
                     onClick={handleAddInvitee}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   >
                     Add
                   </button>
@@ -206,7 +206,7 @@ const TeamInvitation: React.FC<TeamInvitationProps> = ({
           <button
             type="button"
             onClick={handleComplete}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700"
+            className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700"
           >
             Finish Setup
           </button>

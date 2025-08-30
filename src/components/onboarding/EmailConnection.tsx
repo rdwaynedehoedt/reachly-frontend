@@ -387,7 +387,7 @@ const EmailConnection: React.FC<EmailConnectionProps> = ({
                 className={`px-6 py-2 rounded-md font-medium transition-colors ${
                   emailAccounts.length > 0 
                     ? 'bg-green-600 text-white hover:bg-green-700 shadow-lg' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
                 {emailAccounts.length > 0 ? 'Continue to Finish' : 'Continue'}

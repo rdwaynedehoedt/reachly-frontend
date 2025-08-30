@@ -172,7 +172,7 @@ const OrganizationSetup: React.FC<OrganizationSetupProps> = ({
           disabled={!isFormValid()}
           className={`px-6 py-2 rounded-md font-medium ${
             isFormValid()
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

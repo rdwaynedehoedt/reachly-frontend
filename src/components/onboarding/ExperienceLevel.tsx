@@ -81,7 +81,7 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
             <motion.div
               initial={{ width: '50%' }}
               animate={{ width: `${sliderPosition}%` }}
-              className="h-full bg-indigo-600 rounded-full"
+              className="h-full bg-blue-600 rounded-full"
               transition={{ duration: 0.3 }}
             />
           </div>
@@ -99,7 +99,7 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
                     whileTap={{ scale: 0.95 }}
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-lg ${
                       selectedLevel === level.id
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-blue-600 text-white'
                         : 'bg-white border-2 border-gray-300 text-gray-500'
                     }`}
                   >
@@ -108,7 +108,7 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
                   <span
                     className={`mt-2 font-medium ${
                       selectedLevel === level.id
-                        ? 'text-indigo-600'
+                        ? 'text-blue-600'
                         : 'text-gray-500'
                     }`}
                   >
@@ -179,7 +179,7 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
         <button
           type="button"
           onClick={handleContinue}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700"
+          className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700"
         >
           Continue
         </button>

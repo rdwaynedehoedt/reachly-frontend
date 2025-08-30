@@ -92,7 +92,7 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ onRoleSelect, onContinue 
             onClick={() => handleRoleSelect(role.id)}
             className={`cursor-pointer rounded-lg border-2 p-6 transition-all duration-200 ${
               selectedRole === role.id
-                ? 'border-indigo-600 bg-indigo-50'
+                ? 'border-blue-600 bg-blue-50'
                 : 'border-gray-200 hover:border-gray-300 bg-white'
             }`}
           >
@@ -108,7 +108,7 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ onRoleSelect, onContinue 
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="mt-3 bg-indigo-600 text-white rounded-full p-1"
+                  className="mt-3 bg-blue-600 text-white rounded-full p-1"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -142,7 +142,7 @@ const RoleSelection: React.FC<RoleSelectionProps> = ({ onRoleSelect, onContinue 
           disabled={!selectedRole}
           className={`px-6 py-2 rounded-md font-medium ${
             selectedRole
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              ? 'bg-blue-600 text-white hover:bg-blue-700'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >

@@ -154,17 +154,17 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
         >
           <p className="text-gray-500 mb-4">
             Need help getting started? Check out our{' '}
-            <a href="#" className="text-indigo-600 hover:text-indigo-800">
+            <a href="#" className="text-blue-600 hover:text-blue-800">
               quick start guide
             </a>
             {' '}or{' '}
-            <a href="#" className="text-indigo-600 hover:text-indigo-800">
+            <a href="#" className="text-blue-600 hover:text-blue-800">
               contact support
             </a>
           </p>
           <button
             onClick={() => onComplete('explore_dashboard')}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors duration-200"
+            className="px-6 py-3 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 transition-colors duration-200"
           >
             Go to Dashboard
           </button>
