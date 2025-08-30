@@ -101,7 +101,9 @@ export default function OnboardingPage() {
         onComplete={handleOnboardingComplete} 
       />
       {isCompleting && (
-        <LoadingScreen message="Completing onboarding..." />
+        <div className="fixed inset-0 z-50 bg-white">
+          <LoadingScreen message="Completing onboarding..." />
+        </div>
       )}
     </div>
   );

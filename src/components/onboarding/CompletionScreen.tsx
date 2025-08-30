@@ -1,6 +1,5 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
 
 interface CompletionScreenProps {
   userData: {
@@ -19,40 +18,6 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
   userData,
   onComplete
 }) => {
-  useEffect(() => {
-    // Trigger confetti animation on mount
-    const duration = 3 * 1000;
-    const animationEnd = Date.now() + duration;
-    const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
-
-    function randomInRange(min: number, max: number) {
-      return Math.random() * (max - min) + min;
-    }
-
-    const interval = setInterval(() => {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        return clearInterval(interval);
-      }
-
-      const particleCount = 50 * (timeLeft / duration);
-      
-      // Since particles fall down, start a bit higher than random
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-      });
-      confetti({
-        ...defaults,
-        particleCount,
-        origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-      });
-    }, 250);
-
-    return () => clearInterval(interval);
-  }, []);
 
   // Determine recommended next steps based on user data
   const getRecommendedActions = () => {
@@ -99,97 +64,113 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
   const recommendedActions = getRecommendedActions();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      className="max-w-3xl mx-auto px-4 py-12 text-center"
-    >
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ delay: 0.3, type: 'spring', stiffness: 200, damping: 10 }}
-        className="inline-flex items-center justify-center w-24 h-24 mb-6 bg-green-100 rounded-full"
-      >
-        <svg className="w-12 h-12 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-        </svg>
-      </motion.div>
-
-      <motion.h1
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-        className="text-4xl font-bold text-gray-900 mb-4"
-      >
-        You're all set!
-      </motion.h1>
-
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, duration: 0.5 }}
-        className="text-xl text-gray-600 mb-8"
-      >
-        Your Reachly account is ready to use
-      </motion.p>
-
+    <div className="h-screen bg-white flex items-center justify-center overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7, duration: 0.5 }}
-        className="mb-12"
+        transition={{ duration: 0.5 }}
+        className="max-w-2xl mx-auto px-4 text-center"
       >
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
-          Here's what you can do next
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {recommendedActions.map((action, index) => (
-            <motion.div
-              key={action.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 + index * 0.1, duration: 0.5 }}
-              onClick={() => onComplete(action.id)}
-              className="flex items-center p-4 bg-white border-2 border-gray-200 rounded-lg cursor-pointer hover:border-indigo-500 hover:bg-indigo-50 transition-all duration-200"
-            >
-              <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center bg-indigo-100 rounded-full text-2xl">
-                {action.icon}
-              </div>
-              <div className="ml-4 text-left">
-                <h3 className="font-medium text-gray-900">{action.title}</h3>
-                <p className="text-sm text-gray-500">{action.description}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
-        className="text-center"
-      >
-        <p className="text-gray-500 mb-4">
-          Need help getting started? Check out our{' '}
-          <a href="#" className="text-indigo-600 hover:text-indigo-800">
-            quick start guide
-          </a>
-          {' '}or{' '}
-          <a href="#" className="text-indigo-600 hover:text-indigo-800">
-            contact support
-          </a>
-        </p>
-        <button
-          onClick={() => onComplete('explore_dashboard')}
-          className="px-6 py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors duration-200"
+        {/* Simple success circle */}
+        <motion.div 
+          className="w-20 h-20 mx-auto mb-6 bg-green-500 rounded-full flex items-center justify-center"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
         >
-          Go to Dashboard
-        </button>
+          <motion.svg 
+            className="w-10 h-10 text-white" 
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: 1 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={3}
+              d="M5 13l4 4L19 7"
+            />
+          </motion.svg>
+        </motion.div>
+
+        <motion.h1
+          className="text-3xl font-bold text-gray-900 mb-3"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.6 }}
+        >
+          You're all set!
+        </motion.h1>
+        
+        <motion.p
+          className="text-lg text-gray-600 mb-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.7 }}
+        >
+          Your Reachly account is ready to use
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.3 }}
+          className="mb-8"
+        >
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+            Here's what you can do next
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {recommendedActions.map((action, index) => (
+              <motion.div
+                key={action.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1 + index * 0.1, duration: 0.3 }}
+                onClick={() => onComplete(action.id)}
+                className="flex items-center p-4 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-gray-300 hover:shadow-sm transition-all duration-200"
+              >
+                <div className="w-12 h-12 flex items-center justify-center bg-gray-100 rounded-lg text-2xl">
+                  {action.icon}
+                </div>
+                <div className="ml-4 text-left">
+                  <h3 className="font-medium text-gray-900">{action.title}</h3>
+                  <p className="text-sm text-gray-500">{action.description}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.4, duration: 0.3 }}
+          className="text-center"
+        >
+          <p className="text-gray-500 mb-4">
+            Need help getting started? Check out our{' '}
+            <a href="#" className="text-indigo-600 hover:text-indigo-800">
+              quick start guide
+            </a>
+            {' '}or{' '}
+            <a href="#" className="text-indigo-600 hover:text-indigo-800">
+              contact support
+            </a>
+          </p>
+          <button
+            onClick={() => onComplete('explore_dashboard')}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700 transition-colors duration-200"
+          >
+            Go to Dashboard
+          </button>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    </div>
   );
 };
 

@@ -7,6 +7,7 @@ import { EyeIcon, EyeSlashIcon, KeyIcon } from '@heroicons/react/24/outline';
 import FadeIn from '@/components/FadeIn';
 import { useAuth } from '../../contexts/AuthContext';
 import SimpleGoogleButton from '../../components/ui/SimpleGoogleButton';
+import LoadingScreen from '../../components/ui/LoadingScreen';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -31,20 +32,19 @@ export default function LoginPage() {
       
       if (result.success) {
         console.log('✅ Google login successful, redirecting...');
-        // Give a moment for auth context to update, then redirect
-        setTimeout(() => {
-          router.push('/dashboard'); 
-        }, 100);
+        // Immediate redirect to dashboard - the dashboard will handle onboarding redirect if needed
+        router.push('/dashboard'); 
       } else {
         console.log('❌ Google login failed:', result.message);
         setError(result.message || 'Google login failed. Please try again.');
+        setIsLoading(false);
       }
     } catch (error) {
       console.error('💥 Google login error:', error);
       setError('Google login failed. Please try again.');
-    } finally {
       setIsLoading(false);
     }
+    // Note: Don't setIsLoading(false) on success to maintain loading state during redirect
   };
 
   const handleGoogleError = (error: any) => {
@@ -72,19 +72,21 @@ export default function LoginPage() {
       const result = await login({ email, password });
       
       if (result.success) {
-        // Redirect to dashboard (dashboard will handle onboarding redirect)
+        // Immediate redirect to dashboard - dashboard will handle onboarding redirect if needed
         router.push('/dashboard');
       } else {
         setError(result.message || 'Login failed. Please try again.');
+        setIsLoading(false);
       }
     } catch (error) {
       setError('Network error. Please check your connection and try again.');
-    } finally {
       setIsLoading(false);
     }
+    // Note: Don't setIsLoading(false) on success to maintain loading state during redirect
   };
 
   return (
+    <>
     <div className="min-h-screen flex flex-col lg:flex-row bg-white">
       {/* Left Panel - Email Marketing Benefits - Hidden on mobile, shown on lg+ screens */}
       <div className="hidden lg:flex lg:flex-[3] bg-gray-50 flex-col justify-center items-center p-6 xl:p-12">
@@ -340,5 +342,13 @@ export default function LoginPage() {
       </div>
 
     </div>
+    
+    {/* Loading Overlay - Show when successfully logging in */}
+    {isLoading && (
+      <div className="fixed inset-0 z-50 bg-white">
+        <LoadingScreen message="Logging you in..." />
+      </div>
+    )}
+    </>
   );
 }

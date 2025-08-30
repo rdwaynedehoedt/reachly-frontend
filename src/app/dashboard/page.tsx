@@ -88,8 +88,9 @@ export default function DashboardPage() {
     { name: 'Settings', href: 'settings', icon: Cog6ToothIcon, current: activeTab === 'settings' },
   ];
 
-  if (loading) {
-    return <LoadingScreen message="Loading dashboard..." />;
+  // Show loading screen while auth is loading OR if user needs onboarding (prevents dashboard flash)
+  if (loading || (!loading && isAuthenticated && needsOnboarding)) {
+    return <LoadingScreen message={needsOnboarding ? "Setting up your experience..." : "Loading dashboard..."} />;
   }
 
   if (!isAuthenticated) {

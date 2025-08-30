@@ -73,12 +73,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await login(credentials);
       
       if (response.success && response.data) {
+        // Immediately update user state for instant UI updates
         setUser(response.data.user);
         const authToken = response.data.token || response.data.accessToken;
         setToken(authToken || null);
         if (typeof window !== 'undefined' && authToken) {
           localStorage.setItem('authToken', authToken);
         }
+        // Force a brief delay to ensure state propagation
+        await new Promise(resolve => setTimeout(resolve, 50));
         return { success: true };
       } else {
         return {
@@ -99,12 +102,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await signup(data);
       
       if (response.success && response.data) {
+        // Immediately update user state for instant UI updates
         setUser(response.data.user);
         const authToken = response.data.token || response.data.accessToken;
         setToken(authToken || null);
         if (typeof window !== 'undefined' && authToken) {
           localStorage.setItem('authToken', authToken);
         }
+        // Force a brief delay to ensure state propagation
+        await new Promise(resolve => setTimeout(resolve, 50));
         return { success: true };
       } else {
         return {
@@ -144,12 +150,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const response = await googleAuth(credential);
       
       if (response.success && response.data) {
+        // Immediately update user state for instant UI updates
         setUser(response.data.user);
         const authToken = response.data.token || response.data.accessToken;
         setToken(authToken || null);
         if (typeof window !== 'undefined' && authToken) {
           localStorage.setItem('authToken', authToken);
         }
+        // Force a brief delay to ensure state propagation
+        await new Promise(resolve => setTimeout(resolve, 50));
         return { success: true };
       } else {
         return {

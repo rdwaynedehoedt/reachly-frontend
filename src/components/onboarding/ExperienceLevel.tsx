@@ -42,7 +42,7 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
   onBack,
   onSkip
 }) => {
-  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<string | null>('intermediate');
   const [sliderPosition, setSliderPosition] = useState<number>(50);
 
   const handleLevelSelect = (levelId: string, position: number) => {
@@ -52,13 +52,10 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
   };
 
   const handleContinue = () => {
-    if (selectedLevel) {
-      onContinue();
-    } else {
-      // If no selection, default to intermediate
-      onExperienceSelect('intermediate');
-      onContinue();
-    }
+    // Always call onExperienceSelect with the current selection (defaults to 'intermediate')
+    const levelToSelect = selectedLevel || 'intermediate';
+    onExperienceSelect(levelToSelect);
+    onContinue();
   };
 
   return (
@@ -123,7 +120,7 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
           </div>
         </div>
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <div className="mt-6">
           {selectedLevel ? (
             <motion.div
               key={selectedLevel}
@@ -131,16 +128,16 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
             >
-              <h3 className="text-xl font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
                 {experienceLevels.find(level => level.id === selectedLevel)?.title}
               </h3>
               <p className="text-gray-600">
                 {experienceLevels.find(level => level.id === selectedLevel)?.description}
               </p>
               {selectedLevel === 'beginner' && (
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="mt-3 text-sm text-gray-600">
                   <p>We'll provide extra guidance and tutorials to help you get started.</p>
-                  <ul className="list-disc list-inside mt-2">
+                  <ul className="list-disc list-inside mt-2 ml-4">
                     <li>Step-by-step campaign creation wizards</li>
                     <li>Template recommendations for your industry</li>
                     <li>Best practice guides for email marketing</li>
@@ -148,19 +145,14 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
                 </div>
               )}
               {selectedLevel === 'intermediate' && (
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="mt-3 text-sm text-gray-600">
                   <p>We'll balance guidance with advanced features to enhance your workflow.</p>
-                  <ul className="list-disc list-inside mt-2">
-                    <li>Customizable templates and workflows</li>
-                    <li>Performance benchmarking against industry standards</li>
-                    <li>Integration options with your existing tools</li>
-                  </ul>
                 </div>
               )}
               {selectedLevel === 'advanced' && (
-                <div className="mt-4 text-sm text-gray-600">
+                <div className="mt-3 text-sm text-gray-600">
                   <p>We'll focus on advanced features and customization options.</p>
-                  <ul className="list-disc list-inside mt-2">
+                  <ul className="list-disc list-inside mt-2 ml-4">
                     <li>API access and custom integrations</li>
                     <li>Advanced segmentation and automation rules</li>
                     <li>Detailed analytics and custom reporting</li>
@@ -184,22 +176,13 @@ const ExperienceLevel: React.FC<ExperienceLevelProps> = ({
             Previous
           </button>
         </div>
-        <div className="flex items-center space-x-4">
-          <button
-            type="button"
-            onClick={onSkip}
-            className="text-gray-500 hover:text-gray-700 font-medium"
-          >
-            Skip
-          </button>
-          <button
-            type="button"
-            onClick={handleContinue}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700"
-          >
-            Continue
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleContinue}
+          className="px-6 py-2 bg-indigo-600 text-white rounded-md font-medium hover:bg-indigo-700"
+        >
+          Continue
+        </button>
       </div>
     </motion.div>
   );
