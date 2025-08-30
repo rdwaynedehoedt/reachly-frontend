@@ -119,22 +119,22 @@ export default function CampaignsPage() {
   }
 
   return (
-    <>
+    <div className="responsive-container min-h-screen py-8">
       {/* Header */}
-          <div className="mb-8">
+      <div className="mb-8">
         <div className="flex items-center justify-between">
-              <div>
+          <div>
             <h1 className="text-2xl font-bold text-gray-900">Campaigns</h1>
             <p className="mt-1 text-sm text-gray-500">
               Manage your email campaigns and track performance.
             </p>
-              </div>
+          </div>
           <Button
             onClick={() => router.push('/campaigns/create')}
             leftIcon={<PlusIcon className="h-4 w-4" />}
           >
             New Campaign
-                </Button>
+          </Button>
         </div>
       </div>
 
@@ -198,7 +198,7 @@ export default function CampaignsPage() {
           <div className="p-5">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <EnvelopeIcon className="h-6 w-6 text-indigo-600" />
+                <EnvelopeIcon className="h-6 w-6 text-blue-600" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
@@ -211,7 +211,7 @@ export default function CampaignsPage() {
             </div>
           </div>
         </div>
-            </div>
+      </div>
 
       {/* Filters */}
       <div className="bg-white shadow-sm rounded-lg mb-6">
@@ -275,7 +275,7 @@ export default function CampaignsPage() {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

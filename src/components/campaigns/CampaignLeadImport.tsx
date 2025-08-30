@@ -1,0 +1,685 @@
+'use client';
+
+import React, { useState, useRef } from 'react';
+import { 
+  DocumentArrowUpIcon, 
+  UserPlusIcon, 
+  XMarkIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  TrashIcon,
+  EyeIcon,
+  ArrowRightIcon,
+  PlusIcon
+} from '@heroicons/react/24/outline';
+import Papa from 'papaparse';
+
+interface CampaignLead {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  jobTitle?: string;
+  phone?: string;
+  website?: string;
+  customFields?: Record<string, string>;
+}
+
+interface CampaignLeadImportProps {
+  leads: CampaignLead[];
+  onLeadsChange: (leads: CampaignLead[]) => void;
+}
+
+interface CSVData {
+  headers: string[];
+  rows: Record<string, string>[];
+  fileName: string;
+}
+
+interface ColumnMapping {
+  csvColumn: string;
+  leadField: string;
+  isCustom: boolean;
+}
+
+// Standard lead fields available for mapping
+const STANDARD_FIELDS = [
+  { value: 'email', label: 'Email *', required: true },
+  { value: 'firstName', label: 'First Name' },
+  { value: 'lastName', label: 'Last Name' },
+  { value: 'companyName', label: 'Company Name' },
+  { value: 'jobTitle', label: 'Job Title' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'website', label: 'Website' },
+  { value: 'do_not_import', label: "Don't Import", disabled: true }
+];
+
+const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsChange }) => {
+  const [dragActive, setDragActive] = useState(false);
+  const [importMethod, setImportMethod] = useState<'upload' | 'manual'>('upload');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [manualLead, setManualLead] = useState<CampaignLead>({ email: '' });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // CSV Mapping States
+  const [csvData, setCsvData] = useState<CSVData | null>(null);
+  const [columnMappings, setColumnMappings] = useState<ColumnMapping[]>([]);
+  const [customFields, setCustomFields] = useState<string[]>([]);
+  const [newCustomField, setNewCustomField] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [currentStep, setCurrentStep] = useState<'upload' | 'mapping' | 'preview'>('upload');
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true);
+    } else if (e.type === 'dragleave') {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleFiles(e.target.files);
+    }
+  };
+
+  const handleFiles = async (files: FileList) => {
+    const file = files[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setErrors(['Please upload a CSV file']);
+      return;
+    }
+
+    setIsProcessing(true);
+    setErrors([]);
+
+    Papa.parse(file, {
+      header: true,
+      complete: (results) => {
+        try {
+          if (!results.data || results.data.length === 0) {
+            setErrors(['CSV file is empty or invalid']);
+            setIsProcessing(false);
+            return;
+          }
+
+          // Extract headers from first row
+          const firstRow = results.data[0] as Record<string, any>;
+          const headers = Object.keys(firstRow).filter(header => header.trim() !== '');
+
+          if (headers.length === 0) {
+            setErrors(['No valid columns found in CSV file']);
+            setIsProcessing(false);
+            return;
+          }
+
+          // Store CSV data and initialize column mappings
+          const csvInfo: CSVData = {
+            headers,
+            rows: results.data as Record<string, string>[],
+            fileName: file.name
+          };
+
+          setCsvData(csvInfo);
+          
+          // Initialize column mappings with smart defaults
+          const initialMappings: ColumnMapping[] = headers.map(header => {
+            const lowercaseHeader = header.toLowerCase();
+            let mappedField = 'do_not_import';
+            
+            // Smart mapping based on common column names
+            if (lowercaseHeader.includes('email')) mappedField = 'email';
+            else if (lowercaseHeader.includes('first') && lowercaseHeader.includes('name')) mappedField = 'firstName';
+            else if (lowercaseHeader.includes('last') && lowercaseHeader.includes('name')) mappedField = 'lastName';
+            else if (lowercaseHeader.includes('company')) mappedField = 'companyName';
+            else if (lowercaseHeader.includes('job') || lowercaseHeader.includes('title') || lowercaseHeader.includes('position')) mappedField = 'jobTitle';
+            else if (lowercaseHeader.includes('phone')) mappedField = 'phone';
+            else if (lowercaseHeader.includes('website')) mappedField = 'website';
+
+            return {
+              csvColumn: header,
+              leadField: mappedField,
+              isCustom: false
+            };
+          });
+
+          setColumnMappings(initialMappings);
+          setCurrentStep('mapping');
+          setIsProcessing(false);
+
+        } catch (error) {
+          setErrors(['Error processing CSV file']);
+          setIsProcessing(false);
+        }
+      },
+      error: (error) => {
+        setErrors([`CSV parsing error: ${error.message}`]);
+        setIsProcessing(false);
+      }
+    });
+  };
+
+  // Add custom field functionality
+  const addCustomField = () => {
+    if (!newCustomField.trim()) return;
+    
+    const fieldName = newCustomField.trim();
+    if (customFields.includes(fieldName)) {
+      setErrors(['Custom field already exists']);
+      return;
+    }
+
+    setCustomFields([...customFields, fieldName]);
+    setNewCustomField('');
+    setErrors([]);
+  };
+
+  // Update column mapping
+  const updateColumnMapping = (csvColumn: string, leadField: string) => {
+    setColumnMappings(prev => 
+      prev.map(mapping => 
+        mapping.csvColumn === csvColumn 
+          ? { ...mapping, leadField, isCustom: customFields.includes(leadField) }
+          : mapping
+      )
+    );
+  };
+
+  // Process mapped data
+  const processMappedData = () => {
+    if (!csvData) return;
+
+    const newLeads: CampaignLead[] = [];
+    const processingErrors: string[] = [];
+
+    // Check if email is mapped
+    const emailMapping = columnMappings.find(m => m.leadField === 'email');
+    if (!emailMapping) {
+      setErrors(['Email field must be mapped to proceed']);
+      return;
+    }
+
+    csvData.rows.forEach((row, index) => {
+      try {
+        const email = row[emailMapping.csvColumn]?.trim();
+        
+        if (!email) {
+          processingErrors.push(`Row ${index + 1}: Missing email address`);
+          return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          processingErrors.push(`Row ${index + 1}: Invalid email format (${email})`);
+          return;
+        }
+
+        // Check for duplicates
+        if (newLeads.some(lead => lead.email.toLowerCase() === email.toLowerCase())) {
+          processingErrors.push(`Row ${index + 1}: Duplicate email in file (${email})`);
+          return;
+        }
+
+        if (leads.some(lead => lead.email.toLowerCase() === email.toLowerCase())) {
+          processingErrors.push(`Row ${index + 1}: Email already exists in campaign (${email})`);
+          return;
+        }
+
+        // Build lead object
+        const lead: CampaignLead = { email: email.toLowerCase() };
+        const customFieldsData: Record<string, string> = {};
+
+        columnMappings.forEach(mapping => {
+          if (mapping.leadField === 'do_not_import') return;
+          
+          const value = row[mapping.csvColumn]?.trim();
+          if (!value) return;
+
+          if (mapping.isCustom) {
+            customFieldsData[mapping.leadField] = value;
+          } else {
+            switch (mapping.leadField) {
+              case 'firstName': lead.firstName = value; break;
+              case 'lastName': lead.lastName = value; break;
+              case 'companyName': lead.companyName = value; break;
+              case 'jobTitle': lead.jobTitle = value; break;
+              case 'phone': lead.phone = value; break;
+              case 'website': lead.website = value; break;
+            }
+          }
+        });
+
+        if (Object.keys(customFieldsData).length > 0) {
+          lead.customFields = customFieldsData;
+        }
+
+        newLeads.push(lead);
+
+      } catch (error) {
+        processingErrors.push(`Row ${index + 1}: Error processing row`);
+      }
+    });
+
+    if (processingErrors.length > 0) {
+      setErrors(processingErrors);
+    }
+
+    if (newLeads.length > 0) {
+      onLeadsChange([...leads, ...newLeads]);
+      // Reset to initial state
+      setCsvData(null);
+      setCurrentStep('upload');
+      setColumnMappings([]);
+    }
+  };
+
+  const addManualLead = () => {
+    if (!manualLead.email) {
+      setErrors(['Email is required']);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(manualLead.email)) {
+      setErrors(['Invalid email format']);
+      return;
+    }
+
+    if (leads.some(lead => lead.email.toLowerCase() === manualLead.email.toLowerCase())) {
+      setErrors(['Email already exists in campaign']);
+      return;
+    }
+
+    onLeadsChange([...leads, { ...manualLead, email: manualLead.email.toLowerCase() }]);
+    setManualLead({ email: '' });
+    setErrors([]);
+  };
+
+  const removeLead = (email: string) => {
+    onLeadsChange(leads.filter(lead => lead.email !== email));
+  };
+
+  const clearAllLeads = () => {
+    onLeadsChange([]);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h2 className="text-lg font-medium text-gray-900">Add Leads to Campaign</h2>
+        <p className="text-gray-500 mt-1">Upload a CSV file or add leads manually</p>
+      </div>
+
+      {/* Method Selection - Only show if not in CSV mapping flow */}
+      {currentStep === 'upload' && (
+        <div className="flex justify-center space-x-4">
+          <button
+            onClick={() => setImportMethod('upload')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              importMethod === 'upload'
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <DocumentArrowUpIcon className="h-4 w-4 inline mr-2" />
+            Upload CSV
+          </button>
+          <button
+            onClick={() => setImportMethod('manual')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              importMethod === 'manual'
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <UserPlusIcon className="h-4 w-4 inline mr-2" />
+            Add Manually
+          </button>
+        </div>
+      )}
+
+      {/* Step Indicator for CSV Upload */}
+      {importMethod === 'upload' && csvData && (
+        <div className="flex items-center justify-center space-x-4 py-4">
+          <div className={`flex items-center ${currentStep === 'upload' ? 'text-blue-600' : 'text-green-600'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'upload' ? 'bg-blue-100' : 'bg-green-100'}`}>
+              <CheckCircleIcon className="h-5 w-5" />
+            </div>
+            <span className="ml-2 font-medium">Upload</span>
+          </div>
+          <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+          <div className={`flex items-center ${currentStep === 'mapping' ? 'text-blue-600' : currentStep === 'preview' ? 'text-green-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'mapping' ? 'bg-blue-100' : currentStep === 'preview' ? 'bg-green-100' : 'bg-gray-100'}`}>
+              {currentStep === 'preview' ? <CheckCircleIcon className="h-5 w-5" /> : <span className="text-sm font-bold">2</span>}
+            </div>
+            <span className="ml-2 font-medium">Map Columns</span>
+          </div>
+          <ArrowRightIcon className="h-4 w-4 text-gray-400" />
+          <div className={`flex items-center ${currentStep === 'preview' ? 'text-blue-600' : 'text-gray-400'}`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${currentStep === 'preview' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+              <span className="text-sm font-bold">3</span>
+            </div>
+            <span className="ml-2 font-medium">Import</span>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Method */}
+      {importMethod === 'upload' && currentStep === 'upload' && (
+        <div className="max-w-md mx-auto">
+          <div
+            className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+              dragActive 
+                ? 'border-blue-400 bg-blue-50' 
+                : 'border-gray-300 hover:border-gray-400'
+            }`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelect}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              disabled={isProcessing}
+            />
+            
+            <DocumentArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <p className="mt-2 text-sm text-gray-600">
+              {isProcessing ? 'Processing...' : 'Drop your CSV file here, or click to browse'}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Upload your CSV file - you'll be able to map columns in the next step
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Column Mapping Interface */}
+      {importMethod === 'upload' && currentStep === 'mapping' && csvData && (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900">Map Your Columns</h3>
+            <p className="text-gray-500 mt-1">
+              Select which columns from your CSV should map to lead fields
+            </p>
+          </div>
+
+          {/* Add Custom Field */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <input
+                type="text"
+                placeholder="Add custom field (e.g., Industry, Source, etc.)"
+                value={newCustomField}
+                onChange={(e) => setNewCustomField(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && addCustomField()}
+              />
+              <button
+                onClick={addCustomField}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <PlusIcon className="h-4 w-4 mr-1" />
+                Add Field
+              </button>
+            </div>
+            {customFields.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {customFields.map(field => (
+                  <span key={field} className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-md">
+                    {field}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Column Mapping Table */}
+          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+            <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+              <div className="grid grid-cols-4 gap-4 text-sm font-medium text-gray-700">
+                <div>CSV Column</div>
+                <div>Sample Data</div>
+                <div>Maps To</div>
+                <div>Preview</div>
+              </div>
+            </div>
+            <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+              {columnMappings.map((mapping, index) => {
+                const sampleValue = csvData.rows[0]?.[mapping.csvColumn] || '';
+                const allFieldOptions = [
+                  ...STANDARD_FIELDS,
+                  ...customFields.map(field => ({ value: field, label: field, required: false }))
+                ];
+                
+                return (
+                  <div key={mapping.csvColumn} className="px-6 py-4 grid grid-cols-4 gap-4 items-center">
+                    <div className="font-medium text-gray-900">{mapping.csvColumn}</div>
+                    <div className="text-sm text-gray-600 truncate" title={sampleValue}>
+                      {sampleValue || '(empty)'}
+                    </div>
+                    <div>
+                      <select
+                        value={mapping.leadField}
+                        onChange={(e) => updateColumnMapping(mapping.csvColumn, e.target.value)}
+                        className="block w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        {allFieldOptions.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="text-sm">
+                      {mapping.leadField === 'do_not_import' ? (
+                        <span className="text-gray-400">Not imported</span>
+                      ) : mapping.leadField === 'email' ? (
+                        <span className="text-green-600 font-medium">Required ✓</span>
+                      ) : (
+                        <span className="text-blue-600">
+                          {mapping.isCustom ? 'Custom field' : 'Standard field'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Data Preview */}
+          <div className="bg-white border border-gray-200 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-3">Preview (First 3 rows)</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="border-b">
+                    {columnMappings
+                      .filter(m => m.leadField !== 'do_not_import')
+                      .map(mapping => (
+                        <th key={mapping.csvColumn} className="text-left py-2 px-3 font-medium text-gray-700">
+                          {mapping.leadField}
+                          {mapping.leadField === 'email' && <span className="text-red-500">*</span>}
+                        </th>
+                      ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvData.rows.slice(0, 3).map((row, index) => (
+                    <tr key={index} className="border-b">
+                      {columnMappings
+                        .filter(m => m.leadField !== 'do_not_import')
+                        .map(mapping => (
+                          <td key={mapping.csvColumn} className="py-2 px-3 text-gray-600">
+                            {row[mapping.csvColumn] || '(empty)'}
+                          </td>
+                        ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-between">
+            <button
+              onClick={() => {
+                setCsvData(null);
+                setCurrentStep('upload');
+                setColumnMappings([]);
+              }}
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={processMappedData}
+              disabled={!columnMappings.some(m => m.leadField === 'email')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            >
+              Import {csvData.rows.length} Leads
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Method */}
+      {importMethod === 'manual' && (
+        <div className="max-w-md mx-auto space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="email"
+              placeholder="Email *"
+              value={manualLead.email}
+              onChange={(e) => setManualLead({ ...manualLead, email: e.target.value })}
+              className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="First Name"
+              value={manualLead.firstName || ''}
+              onChange={(e) => setManualLead({ ...manualLead, firstName: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Last Name"
+              value={manualLead.lastName || ''}
+              onChange={(e) => setManualLead({ ...manualLead, lastName: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Company"
+              value={manualLead.companyName || ''}
+              onChange={(e) => setManualLead({ ...manualLead, companyName: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            <input
+              type="text"
+              placeholder="Job Title"
+              value={manualLead.jobTitle || ''}
+              onChange={(e) => setManualLead({ ...manualLead, jobTitle: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            onClick={addManualLead}
+            className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            Add Lead
+          </button>
+        </div>
+      )}
+
+      {/* Errors */}
+      {errors.length > 0 && (
+        <div className="max-w-2xl mx-auto bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex">
+            <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mt-0.5" />
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">
+                {errors.length === 1 ? 'Error' : `${errors.length} Errors`}
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <ul className="space-y-1">
+                  {errors.slice(0, 10).map((error, index) => (
+                    <li key={index}>• {error}</li>
+                  ))}
+                  {errors.length > 10 && (
+                    <li>• ... and {errors.length - 10} more errors</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leads Summary */}
+      {leads.length > 0 && (
+        <div className="border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+              <span className="font-medium text-gray-900">
+                {leads.length} lead{leads.length !== 1 ? 's' : ''} added
+              </span>
+            </div>
+            <button
+              onClick={clearAllLeads}
+              className="text-sm text-red-600 hover:text-red-800 flex items-center"
+            >
+              <TrashIcon className="h-4 w-4 mr-1" />
+              Clear All
+            </button>
+          </div>
+          
+          <div className="max-h-60 overflow-y-auto space-y-2">
+            {leads.map((lead, index) => (
+              <div key={index} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                <div className="flex-1">
+                  <div className="font-medium text-gray-900">{lead.email}</div>
+                  <div className="text-sm text-gray-500">
+                    {[lead.firstName, lead.lastName].filter(Boolean).join(' ')}
+                    {lead.companyName && ` • ${lead.companyName}`}
+                  </div>
+                </div>
+                <button
+                  onClick={() => removeLead(lead.email)}
+                  className="text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  <XMarkIcon className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default CampaignLeadImport;

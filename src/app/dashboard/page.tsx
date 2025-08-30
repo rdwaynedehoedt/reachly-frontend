@@ -5,8 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../../contexts/AuthContext';
 import { LoadingScreen, Button } from '@/components/ui';
 import MobileSidebar from '@/components/ui/MobileSidebar';
+import ModernSidebar from '@/components/ui/ModernSidebar';
+import ModernTopbar from '@/components/ui/ModernTopbar';
 import { api } from '@/lib/apiClient';
 import { campaignApi, Campaign, campaignUtils } from '@/lib/campaignApi';
+import CampaignCreationForm from '@/components/campaigns/CampaignCreationForm';
 
 import {
   HomeIcon,
@@ -80,6 +83,12 @@ export default function DashboardPage() {
     router.push('/login');
   };
 
+  // Handle create new action - no longer used since we removed the New button from topbar
+  const handleCreateNew = () => {
+    // This function is no longer used since we removed the New button
+    // Campaign creation now happens within the dashboard
+  };
+
   const navigation = [
     { name: 'Dashboard', href: 'dashboard', icon: HomeIcon, current: activeTab === 'dashboard' },
     { name: 'Campaigns', href: 'campaigns', icon: MegaphoneIcon, current: activeTab === 'campaigns' },
@@ -98,7 +107,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50/30">
       {/* Mobile sidebar */}
       <MobileSidebar
         sidebarOpen={sidebarOpen}
@@ -108,143 +117,39 @@ export default function DashboardPage() {
         user={user}
       />
 
-      {/* Sidebar - Responsive sizing */}
-      <div className="hidden md:flex md:w-56 lg:w-64 xl:w-72 md:flex-col md:fixed md:inset-y-0">
-        <div className="flex flex-col flex-grow pt-4 lg:pt-5 bg-white shadow-sm border-r border-gray-200">
-          {/* Logo */}
-          <div className="flex items-center flex-shrink-0 px-4 mb-8">
-            <img 
-              src="/logo with no background no nae just logo.png" 
-              alt="Reachly Logo" 
-              className="h-8 w-auto mr-3"
-            />
-            <span className="text-xl font-bold text-blue-600">Reachly</span>
+      {/* Modern Desktop Sidebar */}
+      <div className="hidden md:block">
+        <ModernSidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+          onLogout={handleLogout}
+        />
           </div>
           
-          {/* Navigation */}
-          <nav className="mt-5 flex-1 px-2 space-y-1">
-            {navigation.map((item) => {
-              const IconComponent = item.current 
-                ? (item.name === 'Analytics' ? ChartBarIconSolid : item.icon)
-                : item.icon;
-              
-              return (
-                <button
-                  key={item.name}
-                  onClick={() => setActiveTab(item.href)}
-                  className={`${
-                    item.current
-                      ? 'bg-blue-50 border-r-4 border-blue-600 text-blue-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  } group flex items-center px-2 py-2 text-sm font-medium rounded-l-md w-full text-left transition-colors`}
-                >
-                  <IconComponent
-                    className={`${
-                      item.current ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-500'
-                    } mr-3 flex-shrink-0 h-5 w-5`}
-                  />
-                  {item.name}
-                </button>
-              );
-            })}
-          </nav>
+      {/* Modern Topbar */}
+      <ModernTopbar
+        onMobileMenuToggle={() => setSidebarOpen(!sidebarOpen)}
+        showMobileMenu={sidebarOpen}
+        user={user}
+        onLogout={handleLogout}
+        onCreateNew={handleCreateNew}
+      />
 
-          {/* User section */}
-          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <div className="flex-shrink-0 w-full group block">
-              <div className="flex items-center">
-                <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-600">
-                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                  </span>
-                </div>
-                <div className="ml-3 flex-1">
-                  <p className="text-sm font-medium text-gray-700 group-hover:text-gray-900">
-                    {user?.firstName} {user?.lastName}
-                  </p>
-                  <p className="text-xs font-medium text-gray-500 group-hover:text-gray-700">
-                    {user?.email}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main content - Responsive margins for different sidebar widths */}
-      <div className="flex flex-col w-0 flex-1 overflow-hidden md:ml-56 lg:ml-64 xl:ml-72">
-        {/* Top navigation */}
-        <div className="bg-white shadow-sm border-b border-gray-200 flex-shrink-0">
-          <div className="px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between h-14 sm:h-16">
-              <div className="flex items-center flex-1">
-                {/* Mobile menu button */}
-                <button
-                  type="button"
-                  className="px-2 sm:px-4 text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
-                  onClick={() => setSidebarOpen(true)}
-                >
-                  <span className="sr-only">Open sidebar</span>
-                  <Bars3Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
-                </button>
-                {/* Search - Responsive sizing */}
-                <div className="w-full max-w-xs sm:max-w-sm lg:max-w-xs xl:max-w-sm ml-2 sm:ml-4 md:ml-0">
-                  <label htmlFor="search" className="sr-only">
-                    Search
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
-                      <MagnifyingGlassIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                    </div>
-                    <input
-                      id="search"
-                      name="search"
-                      className="block w-full pl-8 sm:pl-10 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs sm:text-sm min-h-[44px] touch-target"
-                      placeholder="Search..."
-                      type="search"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <div className="ml-2 sm:ml-4 flex items-center md:ml-6 space-x-1 sm:space-x-3">
-
-                
-                {/* Notifications */}
-                <button
-                  type="button"
-                  className="bg-white p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
-                >
-                  <BellIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-                </button>
-
-                {/* Profile dropdown */}
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="bg-white p-1.5 sm:p-2 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 min-h-[44px] min-w-[44px] flex items-center justify-center touch-target"
-                >
-                  <EllipsisVerticalIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Page content - Responsive layout */}
-        <main className="flex-1 relative overflow-y-auto focus:outline-none">
-          <div className="py-4 sm:py-6">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 responsive-container">
+      {/* Main content with proper spacing */}
+      <main className="pt-14 ml-0 md:ml-16 transition-all duration-200">
+        <div className="min-h-screen">
+          <div className="py-6 px-4 sm:px-6 lg:px-8">
+            <div className="max-w-7xl mx-auto">
               {activeTab === 'dashboard' && <DashboardContent user={user} />}
               {activeTab === 'campaigns' && <CampaignsContent />}
               {activeTab === 'leads' && <LeadsContent />}
               {activeTab === 'analytics' && <AnalyticsContent />}
               {activeTab === 'settings' && <SettingsContent />}
             </div>
+            </div>
           </div>
         </main>
-      </div>
     </div>
   );
 }
@@ -939,6 +844,7 @@ function CampaignsContent() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -1033,6 +939,8 @@ function CampaignsContent() {
 
   return (
     <>
+      {!showCreateForm ? (
+    <>
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -1043,7 +951,7 @@ function CampaignsContent() {
             </p>
           </div>
           <Button
-            onClick={() => router.push('/campaigns/create')}
+                onClick={() => setShowCreateForm(true)}
             leftIcon={<PlusIcon className="h-4 w-4" />}
           >
             New Campaign
@@ -1175,7 +1083,7 @@ function CampaignsContent() {
               Get started by creating your first email campaign. You can import leads, customize templates, and track performance all in one place.
             </p>
             <Button
-              onClick={() => router.push('/campaigns/create')}
+              onClick={() => setShowCreateForm(true)}
               leftIcon={<PlusIcon className="h-4 w-4" />}
             >
               Create Your First Campaign
@@ -1202,6 +1110,16 @@ function CampaignsContent() {
             </div>
           </div>
         </div>
+          )}
+        </>
+      ) : (
+        <CampaignCreationForm 
+          onCancel={() => setShowCreateForm(false)}
+          onSuccess={() => {
+            setShowCreateForm(false);
+            fetchCampaigns(); // Refresh campaigns list
+          }}
+        />
       )}
     </>
   );

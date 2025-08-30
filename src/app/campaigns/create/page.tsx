@@ -6,7 +6,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useEmail } from '../../../contexts/EmailContext';
 import { LoadingScreen, Button } from '@/components/ui';
 import { campaignApi, CreateCampaignData } from '@/lib/campaignApi';
-import { leadsApi } from '@/lib/apiClient';
+import CampaignLeadImport from '@/components/campaigns/CampaignLeadImport';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -47,8 +47,17 @@ interface FormData {
   bodyHtml: string;
   bodyText: string;
   
-  // Leads
-  selectedLeadIds: string[];
+  // Campaign Leads (new approach)
+  campaignLeads: Array<{
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    companyName?: string;
+    jobTitle?: string;
+    phone?: string;
+    website?: string;
+    customFields?: Record<string, string>;
+  }>;
 }
 
 export default function CreateCampaignPage() {
@@ -57,21 +66,7 @@ export default function CreateCampaignPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [leads, setLeads] = useState<any[]>([]);
-  const [leadsLoading, setLeadsLoading] = useState(false);
-  const [leadsPagination, setLeadsPagination] = useState({
-    page: 1,
-    limit: 50,
-    total: 0,
-    totalPages: 0,
-    hasNext: false,
-    hasPrev: false
-  });
-  const [leadsFilters, setLeadsFilters] = useState({
-    search: '',
-    status: '',
-    source: ''
-  });
+  // Remove old lead management state - no longer needed
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -86,21 +81,20 @@ export default function CreateCampaignPage() {
     subject: '',
     bodyHtml: '',
     bodyText: '',
-    selectedLeadIds: [],
+    campaignLeads: [],
   });
 
   const steps = [
     { id: 1, name: 'Basic Info', icon: InformationCircleIcon, description: 'Campaign details' },
     { id: 2, name: 'Email Settings', icon: EnvelopeIcon, description: 'From address & settings' },
-    { id: 3, name: 'Select Leads', icon: UsersIcon, description: 'Choose recipients' },
+    { id: 3, name: 'Add Leads', icon: UsersIcon, description: 'Upload or add recipients' },
     { id: 4, name: 'Email Template', icon: PencilIcon, description: 'Design your message' },
     { id: 5, name: 'Review & Launch', icon: RocketLaunchIcon, description: 'Final review' },
   ];
 
-  // Fetch data on component mount
+  // Initialize component mount
   useEffect(() => {
     if (isAuthenticated) {
-      fetchLeads();
       // Set default from name if user is available
       if (user) {
         setFormData(prev => ({
@@ -111,19 +105,7 @@ export default function CreateCampaignPage() {
     }
   }, [isAuthenticated, user]);
 
-  const fetchLeads = async () => {
-    try {
-      const response = await leadsApi.getAll();
-      if (response.success && response.data?.leads) {
-        setLeads(response.data.leads);
-      } else {
-        setLeads([]); // Set empty array as fallback
-      }
-    } catch (error) {
-      console.error('Error fetching leads:', error);
-      setLeads([]); // Set empty array as fallback
-    }
-  };
+  // Remove old lead fetching - no longer needed
 
 
 
@@ -150,7 +132,7 @@ export default function CreateCampaignPage() {
       case 2:
         return formData.fromEmail.trim().length > 0 && emailAccounts.length > 0;
       case 3:
-        return formData.selectedLeadIds.length > 0;
+        return formData.campaignLeads.length > 0;
       case 4:
         return formData.subject.trim().length > 0 && (formData.bodyHtml.trim().length > 0 || formData.bodyText.trim().length > 0);
       case 5:
@@ -194,25 +176,98 @@ export default function CreateCampaignPage() {
         });
       }
 
-      // Add leads
-      if (formData.selectedLeadIds.length > 0) {
-        await campaignApi.addLeads(campaignId, formData.selectedLeadIds);
+      // Add campaign leads to database
+      if (formData.campaignLeads.length > 0) {
+        console.log(`📥 Creating ${formData.campaignLeads.length} leads for campaign...`);
+        
+        // Step 1: Create leads in database using bulk import
+        const leadsForImport = formData.campaignLeads.map(lead => ({
+          email: lead.email,
+          first_name: lead.firstName || '',
+          last_name: lead.lastName || '',
+          company_name: lead.companyName || '',
+          job_title: lead.jobTitle || '',
+          phone: lead.phone || '',
+          website: lead.website || '',
+          source: 'campaign_import'
+        }));
+
+        // Import leads to database
+        const { leadsApi } = await import('@/lib/apiClient');
+        const importResult = await leadsApi.import({
+          leads: leadsForImport,
+          columnMapping: {
+            email: 'email',
+            first_name: 'first_name',
+            last_name: 'last_name',
+            company_name: 'company_name',
+            job_title: 'job_title',
+            phone: 'phone',
+            website: 'website'
+          },
+          fileName: `campaign-${formData.name}-${new Date().toISOString()}`,
+          duplicateChecks: {
+            workspace: false // Allow duplicates for campaign-specific leads
+          }
+        });
+
+        if (!importResult.success) {
+          throw new Error(`Failed to import leads: ${importResult.message}`);
+        }
+
+        console.log(`✅ Imported ${importResult.data.imported} leads`);
+
+        // Step 2: Get the lead IDs by querying the emails we just imported
+        const leadEmails = formData.campaignLeads.map(lead => lead.email);
+        const allLeadsResult = await leadsApi.getAll();
+        
+        if (allLeadsResult.success && allLeadsResult.data?.leads) {
+          // Find the lead IDs for our newly imported leads
+          const leadIds: string[] = [];
+          for (const lead of allLeadsResult.data.leads) {
+            if (leadEmails.includes((lead as any).email)) {
+              leadIds.push((lead as any).id);
+            }
+          }
+
+          console.log(`🔗 Linking ${leadIds.length} leads to campaign...`);
+
+          // Step 3: Associate leads with campaign
+          if (leadIds.length > 0) {
+            const addLeadsResult = await campaignApi.addLeads(campaignId, leadIds);
+            if (!addLeadsResult.success) {
+              console.warn('⚠️ Failed to add some leads to campaign:', addLeadsResult.message);
+            } else {
+              console.log(`✅ Successfully linked ${addLeadsResult.data.added} leads to campaign`);
+            }
+          }
+        }
       }
 
       // Launch campaign if requested
       if (launch) {
-        // First activate the campaign
-        await campaignApi.updateStatus(campaignId, 'active');
+        console.log('🚀 Launching campaign...');
+        
+        // First activate the campaign and wait for it
+        const statusUpdateResult = await campaignApi.updateStatus(campaignId, 'active');
+        if (!statusUpdateResult.success) {
+          throw new Error(`Failed to activate campaign: ${statusUpdateResult.message}`);
+        }
+        
+        console.log('✅ Campaign activated, now launching...');
+        
+        // Add a small delay to ensure the status update is committed
+        await new Promise(resolve => setTimeout(resolve, 1000));
         
         // Then launch it
         const launchResponse = await campaignApi.launch(campaignId);
         if (launchResponse.success) {
-          alert(`Campaign launched successfully! ${launchResponse.data.sentCount} emails sent.`);
+          alert(`🎉 Campaign launched successfully! ${launchResponse.data.sentCount} emails sent.`);
         } else {
-          alert(`Campaign created but launch failed: ${launchResponse.message}`);
+          alert(`❌ Campaign created but launch failed: ${launchResponse.message}`);
         }
       } else {
-        alert('Campaign created successfully!');
+        alert('✅ Campaign created successfully!');
       }
 
       // Redirect to campaigns dashboard
@@ -240,12 +295,12 @@ export default function CreateCampaignPage() {
         <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <Button
             variant="ghost"
-            onClick={() => router.push('/campaigns')}
+            onClick={() => router.push('/dashboard?tab=campaigns')}
             leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
             size="sm"
             className="w-full sm:w-auto"
           >
-            Back to Campaigns
+            Back to Dashboard
           </Button>
           <div className="hidden sm:block h-6 w-px bg-gray-300" />
           <div className="text-center sm:text-left">
@@ -345,18 +400,17 @@ export default function CreateCampaignPage() {
                 emailAccounts={emailAccounts}
               />
             )}
-            {currentStep === 3 && (
-              <SelectLeadsStep 
-                formData={formData} 
-                updateFormData={updateFormData}
-                leads={leads}
-              />
-            )}
+                    {currentStep === 3 && (
+          <AddLeadsStep
+            formData={formData}
+            updateFormData={updateFormData}
+          />
+        )}
             {currentStep === 4 && (
               <EmailTemplateStep formData={formData} updateFormData={updateFormData} />
             )}
             {currentStep === 5 && (
-              <ReviewStep formData={formData} leads={leads} />
+              <ReviewStep formData={formData} />
             )}
           </div>
 
@@ -411,7 +465,7 @@ export default function CreateCampaignPage() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -607,119 +661,22 @@ function EmailSettingsStep({ formData, updateFormData, emailAccounts }: EmailSet
   );
 }
 
-// Step 3: Select Leads
-interface SelectLeadsStepProps {
+// Step 3: Add Leads (New Campaign-Centric Approach)
+interface AddLeadsStepProps {
   formData: FormData;
   updateFormData: (updates: Partial<FormData>) => void;
-  leads: any[];
 }
 
-function SelectLeadsStep({ formData, updateFormData, leads }: SelectLeadsStepProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredLeads = leads.filter(lead =>
-    lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    `${lead.first_name} ${lead.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (lead.company_name || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const toggleLead = (leadId: string) => {
-    const currentIds = formData.selectedLeadIds;
-    const newIds = currentIds.includes(leadId)
-      ? currentIds.filter(id => id !== leadId)
-      : [...currentIds, leadId];
-    updateFormData({ selectedLeadIds: newIds });
-  };
-
-  const selectAll = () => {
-    updateFormData({ selectedLeadIds: filteredLeads.map(lead => lead.id) });
-  };
-
-  const deselectAll = () => {
-    updateFormData({ selectedLeadIds: [] });
+function AddLeadsStep({ formData, updateFormData }: AddLeadsStepProps) {
+  const handleLeadsChange = (leads: FormData['campaignLeads']) => {
+    updateFormData({ campaignLeads: leads });
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Select Recipients</h2>
-        <p className="text-gray-500 mt-1">Choose which leads will receive this campaign</p>
-      </div>
-
-      <div className="space-y-4">
-        {/* Search and Actions */}
-        <div className="flex items-center justify-between space-x-4">
-          <div className="flex-1 relative">
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" size="sm" onClick={selectAll}>
-              Select All
-            </Button>
-            <Button variant="outline" size="sm" onClick={deselectAll}>
-              Clear
-            </Button>
-          </div>
-        </div>
-
-        {/* Selection Summary */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800">
-            <strong>{formData.selectedLeadIds.length}</strong> leads selected out of {filteredLeads.length} shown
-          </p>
-        </div>
-
-        {/* Leads List */}
-        <div className="max-h-96 overflow-y-auto border border-gray-200 rounded-lg">
-          {filteredLeads.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No leads found. Import some leads first.
-            </div>
-          ) : (
-            <div className="divide-y divide-gray-200">
-              {filteredLeads.map((lead) => (
-                <label
-                  key={lead.id}
-                  className="flex items-center p-4 hover:bg-gray-50 cursor-pointer transition-colors duration-150"
-                >
-                  <input
-                    type="checkbox"
-                    checked={formData.selectedLeadIds.includes(lead.id)}
-                    onChange={() => toggleLead(lead.id)}
-                    className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                  <div className="ml-3 flex-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {lead.first_name} {lead.last_name}
-                        </p>
-                        <p className="text-sm text-gray-600">{lead.email}</p>
-                        {lead.company_name && (
-                          <p className="text-sm text-gray-500">{lead.company_name}</p>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        {lead.job_title && (
-                          <p className="text-sm text-gray-600">{lead.job_title}</p>
-                        )}
-                        <p className="text-xs text-gray-500">{lead.source}</p>
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+    <CampaignLeadImport
+      leads={formData.campaignLeads}
+      onLeadsChange={handleLeadsChange}
+    />
   );
 }
 
@@ -853,11 +810,9 @@ I noticed that {{company}} is..."
 // Step 5: Review
 interface ReviewStepProps {
   formData: FormData;
-  leads: any[];
 }
 
-function ReviewStep({ formData, leads }: ReviewStepProps) {
-  const selectedLeads = leads.filter(lead => formData.selectedLeadIds.includes(lead.id));
+function ReviewStep({ formData }: ReviewStepProps) {
 
   return (
     <div className="space-y-6">
@@ -885,7 +840,7 @@ function ReviewStep({ formData, leads }: ReviewStepProps) {
             </div>
             <div>
               <p className="text-sm text-gray-600">Recipients</p>
-              <p className="font-medium">{selectedLeads.length} leads</p>
+              <p className="font-medium">{formData.campaignLeads.length} leads</p>
             </div>
           </div>
           {formData.description && (
@@ -905,28 +860,30 @@ function ReviewStep({ formData, leads }: ReviewStepProps) {
           </div>
           <div className="p-4">
             <div className="prose max-w-none text-sm">
-              {formData.bodyText.split('\n').map((line, index) => (
+              {formData.bodyText ? formData.bodyText.split('\n').map((line: string, index: number) => (
                 <p key={index}>{line}</p>
-              ))}
+              )) : (
+                <div dangerouslySetInnerHTML={{ __html: formData.bodyHtml }} />
+              )}
             </div>
           </div>
         </div>
 
-        {/* Selected Leads Preview */}
+        {/* Campaign Leads Preview */}
         <div className="bg-blue-50 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Selected Recipients ({selectedLeads.length})
+            Campaign Recipients ({formData.campaignLeads.length})
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-            {selectedLeads.slice(0, 10).map((lead) => (
-              <div key={lead.id} className="flex items-center space-x-2">
+            {formData.campaignLeads.slice(0, 10).map((lead, index) => (
+              <div key={index} className="flex items-center space-x-2">
                 <CheckCircleIconSolid className="h-4 w-4 text-blue-600" />
-                <span className="text-sm">{lead.first_name} {lead.last_name} - {lead.email}</span>
+                <span className="text-sm">{lead.firstName} {lead.lastName} - {lead.email}</span>
               </div>
             ))}
-            {selectedLeads.length > 10 && (
+            {formData.campaignLeads.length > 10 && (
               <p className="text-sm text-gray-600 col-span-2">
-                + {selectedLeads.length - 10} more leads
+                + {formData.campaignLeads.length - 10} more leads
               </p>
             )}
           </div>
