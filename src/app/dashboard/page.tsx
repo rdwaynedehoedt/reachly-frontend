@@ -107,7 +107,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/30">
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
       <MobileSidebar
         sidebarOpen={sidebarOpen}
@@ -136,7 +136,7 @@ export default function DashboardPage() {
         onCreateNew={handleCreateNew}
       />
 
-      {/* Main content with proper spacing */}
+      {/* Main content */}
       <main className="pt-14 ml-0 md:ml-16 transition-all duration-200">
         <div className="min-h-screen">
           <div className="py-6 px-4 sm:px-6 lg:px-8">
@@ -147,179 +147,245 @@ export default function DashboardPage() {
               {activeTab === 'analytics' && <AnalyticsContent />}
               {activeTab === 'settings' && <SettingsContent />}
             </div>
-            </div>
           </div>
-        </main>
+        </div>
+      </main>
     </div>
   );
 }
 
 // Dashboard Content Component
 function DashboardContent({ user }: { user: any }) {
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardAnalytics();
+  }, []);
+
+  const fetchDashboardAnalytics = async () => {
+    try {
+      setLoadingAnalytics(true);
+      const { campaignApi } = await import('@/lib/campaignApi');
+      const response = await campaignApi.getDashboardAnalytics();
+      
+      if (response.success && response.data) {
+        setAnalytics(response.data);
+      } else {
+        console.error('Failed to fetch analytics:', response.message);
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  const formatNumber = (num: number) => {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+    return num.toLocaleString();
+  };
+
+  const formatCurrency = (num: number) => {
+    if (num >= 1000000) return '$' + (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return '$' + (num / 1000).toFixed(1) + 'k';
+    return '$' + num.toLocaleString();
+  };
+
   return (
     <>
-      {/* Welcome Header - Responsive */}
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+      {/* Welcome Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-semibold text-gray-900">
           Welcome back, {user?.firstName}!
         </h1>
-        <p className="mt-1 text-sm sm:text-base text-gray-500">
-          Here's what's happening with your leads today.
+        <p className="mt-1 text-sm text-gray-500">
+          Here's what's happening with your campaigns today.
         </p>
       </div>
 
-      {/* Stats - Responsive grid */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6 sm:mb-8 auto-fit-responsive">
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-3 sm:p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <EnvelopeIconSolid className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
-              </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
-                <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                    Emails Sent
-                  </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">1,247</dd>
-                </dl>
-              </div>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 mb-8">
+        <div className="bg-white p-5 rounded-lg border border-gray-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <EnvelopeIconSolid className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-3">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500">
+                  Emails Sent
+                </dt>
+                <dd className="text-lg font-semibold text-gray-900">
+                  {loadingAnalytics ? (
+                    <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
+                  ) : (
+                    formatNumber(analytics?.overview?.emails_sent || 0)
+                  )}
+                </dd>
+              </dl>
             </div>
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-3 sm:p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ChartBarIconSolid className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
-              </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
-                <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                    Open Rate
-                  </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">24.3%</dd>
-                </dl>
-              </div>
+        <div className="bg-white p-5 rounded-lg border border-gray-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <ChartBarIconSolid className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-3">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500">
+                  Open Rate
+                </dt>
+                <dd className="text-lg font-semibold text-gray-900">
+                  {loadingAnalytics ? (
+                    <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
+                  ) : (
+                    `${analytics?.overview?.open_rate || 0}%`
+                  )}
+                </dd>
+              </dl>
             </div>
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-3 sm:p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <UserGroupIcon className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600" />
-              </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
-                <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                    Reply Rate
-                  </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">8.1%</dd>
-                </dl>
-              </div>
+        <div className="bg-white p-5 rounded-lg border border-gray-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <UserGroupIcon className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="ml-3">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500">
+                  Reply Rate
+                </dt>
+                <dd className="text-lg font-semibold text-gray-900">
+                  {loadingAnalytics ? (
+                    <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
+                  ) : (
+                    `${analytics?.overview?.reply_rate || 0}%`
+                  )}
+                </dd>
+              </dl>
             </div>
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-3 sm:p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-5 w-5 sm:h-6 sm:w-6 bg-yellow-100 rounded-full flex items-center justify-center">
-                  <span className="text-yellow-600 font-bold text-xs sm:text-sm">$</span>
-                </div>
+        <div className="bg-white p-5 rounded-lg border border-gray-200">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="h-6 w-6 bg-orange-100 rounded flex items-center justify-center">
+                <span className="text-orange-600 font-bold text-sm">$</span>
               </div>
-              <div className="ml-3 sm:ml-5 w-0 flex-1 min-w-0">
-                <dl>
-                  <dt className="text-xs sm:text-sm font-medium text-gray-500 truncate">
-                    Opportunities
-                  </dt>
-                  <dd className="text-base sm:text-lg font-medium text-gray-900">$12,500</dd>
-                </dl>
-              </div>
+            </div>
+            <div className="ml-3">
+              <dl>
+                <dt className="text-sm font-medium text-gray-500">
+                  Opportunities
+                </dt>
+                <dd className="text-lg font-semibold text-gray-900">
+                  {loadingAnalytics ? (
+                    <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
+                  ) : (
+                    formatCurrency(analytics?.overview?.opportunities || 0)
+                  )}
+                </dd>
+              </dl>
             </div>
           </div>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white shadow-sm rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Recent Activity
-          </h3>
-          <div className="flow-root">
-            <ul className="-mb-8">
-              <li>
-                <div className="relative pb-8">
-                  <div className="relative flex space-x-3">
-                    <div>
-                      <span className="h-8 w-8 rounded-full bg-green-500 flex items-center justify-center ring-8 ring-white">
-                        <EnvelopeIconSolid className="h-4 w-4 text-white" />
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                      <div>
-                        <p className="text-sm text-gray-500">
-                          Email <span className="font-medium text-gray-900">"Q1 Outreach"</span> sent to 45 leads
-                        </p>
-                      </div>
-                      <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                        2 hours ago
-                      </div>
-                    </div>
+      <div className="bg-white rounded-lg border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-medium text-gray-900">Recent Activity</h3>
+        </div>
+        <div className="p-6">
+          {loadingAnalytics ? (
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-start space-x-3">
+                  <div className="animate-pulse bg-gray-200 h-8 w-8 rounded-full"></div>
+                  <div className="flex-1">
+                    <div className="animate-pulse bg-gray-200 h-4 w-3/4 rounded mb-2"></div>
+                    <div className="animate-pulse bg-gray-200 h-3 w-1/4 rounded"></div>
                   </div>
                 </div>
-              </li>
-              <li>
-                <div className="relative pb-8">
-                  <div className="relative flex space-x-3">
-                    <div>
-                      <span className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center ring-8 ring-white">
-                        <UserGroupIcon className="h-4 w-4 text-white" />
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                      <div>
-                        <p className="text-sm text-gray-500">
-                          New lead <span className="font-medium text-gray-900">Sarah Johnson</span> added to prospects
-                        </p>
-                      </div>
-                      <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                        4 hours ago
-                      </div>
-                    </div>
+              ))}
+            </div>
+          ) : analytics?.recent_activity?.length > 0 ? (
+            <div className="space-y-4">
+              {analytics.recent_activity.slice(0, 5).map((activity: any, index: number) => (
+                <div key={index} className="flex items-start space-x-3">
+                  <div className="flex-shrink-0">
+                    <span className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
+                      <EnvelopeIconSolid className="h-4 w-4 text-green-600" />
+                    </span>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-900">
+                      <span className="font-medium">{activity.emails_sent}</span> emails sent
+                      {activity.emails_opened > 0 && (
+                        <>, <span className="font-medium">{activity.emails_opened}</span> opened</>
+                      )}
+                      {activity.emails_replied > 0 && (
+                        <>, <span className="font-medium text-green-600">{activity.emails_replied}</span> replied</>
+                      )}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(activity.date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric'
+                      })}
+                    </p>
                   </div>
                 </div>
-              </li>
-              <li>
-                <div className="relative">
-                  <div className="relative flex space-x-3">
-                    <div>
-                      <span className="h-8 w-8 rounded-full bg-purple-500 flex items-center justify-center ring-8 ring-white">
-                        <ChartBarIconSolid className="h-4 w-4 text-white" />
-                      </span>
-                    </div>
-                    <div className="min-w-0 flex-1 pt-1.5 flex justify-between space-x-4">
-                      <div>
-                        <p className="text-sm text-gray-500">
-                          Email performance report generated for last 7 days
-                        </p>
-                      </div>
-                      <div className="text-right text-sm whitespace-nowrap text-gray-500">
-                        1 day ago
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No recent activity</h3>
+              <p className="mt-1 text-sm text-gray-500">Start sending campaigns to see activity here.</p>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Top Campaigns */}
+      {analytics?.top_campaigns?.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 mt-8">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-lg font-medium text-gray-900">Top Performing Campaigns</h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {analytics.top_campaigns.slice(0, 3).map((campaign: any) => (
+                <div key={campaign.id} className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-gray-900">{campaign.name}</h4>
+                    <p className="text-xs text-gray-500">
+                      {campaign.emails_sent} sent • {campaign.open_rate}% open rate
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-medium text-gray-900">
+                      {campaign.emails_replied} replies
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {((campaign.emails_replied / (campaign.emails_sent || 1)) * 100).toFixed(1)}% reply rate
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
@@ -1102,7 +1168,7 @@ function CampaignsContent() {
                   onDelete={handleDeleteCampaign}
                   onEdit={() => alert('Campaign editing coming soon!')}
                   onView={() => alert('Campaign details coming soon!')}
-                  onAnalytics={() => alert('Campaign analytics coming soon!')}
+                  onAnalytics={() => router.push(`/campaigns/${campaign.id}/analytics`)}
                   onLaunch={handleLaunchCampaign}
                   loading={actionLoading === campaign.id}
                 />

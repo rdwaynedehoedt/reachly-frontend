@@ -8,8 +8,6 @@ import {
   UserGroupIcon,
   ChartBarIcon,
   Cog6ToothIcon,
-  ChevronRightIcon,
-  ChevronLeftIcon,
   ArrowLeftOnRectangleIcon,
 } from '@heroicons/react/24/outline';
 import {
@@ -122,17 +120,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
         </div>
       </div>
 
-      {/* Expand/Collapse Toggle */}
-      <div className="absolute -right-2 top-20 z-50">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-5 h-5 bg-gray-900 hover:bg-gray-700 rounded-full flex items-center justify-center transition-colors"
-        >
-          <ChevronRightIcon 
-            className={`h-3 w-3 text-white transition-transform duration-200 ${shouldShow ? 'rotate-180' : ''}`} 
-          />
-        </button>
-      </div>
+
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-6 space-y-1 overflow-hidden">
@@ -149,10 +137,7 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
                   : 'text-gray-500 hover:text-gray-900'
               }`}
             >
-              {/* Active indicator */}
-              {item.current && (
-                <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-900" />
-              )}
+
               
               {/* Icon */}
               <div className="flex items-center justify-center w-10 h-6">

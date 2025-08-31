@@ -1,6 +1,43 @@
 // Campaign API client with TypeScript types and modern patterns
 import { apiClient } from './apiClient';
 
+// Dashboard Analytics Types
+export interface DashboardAnalytics {
+  overview: {
+    total_campaigns: number;
+    active_campaigns: number;
+    total_leads: number;
+    emails_sent: number;
+    open_rate: number;
+    click_rate: number;
+    reply_rate: number;
+    opportunities: number;
+  };
+  campaign_breakdown: {
+    active: number;
+    paused: number;
+    completed: number;
+    draft: number;
+  };
+  recent_activity: Array<{
+    date: string;
+    emails_sent: number;
+    emails_opened: number;
+    emails_clicked: number;
+    emails_replied: number;
+  }>;
+  top_campaigns: Array<{
+    id: string;
+    name: string;
+    status: string;
+    total_leads: number;
+    emails_sent: number;
+    emails_opened: number;
+    emails_replied: number;
+    open_rate: number;
+  }>;
+}
+
 // Type definitions
 export interface Campaign {
   id: string;
@@ -141,6 +178,26 @@ export interface PersonalizationVariable {
 
 // Campaign API client
 export const campaignApi = {
+  // Get dashboard analytics
+  async getDashboardAnalytics(): Promise<{
+    success: boolean;
+    data?: DashboardAnalytics;
+    message?: string;
+  }> {
+    try {
+      const response = await apiClient.get('/campaigns/dashboard/analytics');
+      return {
+        success: true,
+        data: response.data
+      };
+    } catch (error: any) {
+      console.error('Error fetching dashboard analytics:', error);
+      return {
+        success: false,
+        message: error?.response?.data?.message || 'Failed to fetch analytics'
+      };
+    }
+  },
   // Campaign CRUD operations
   getAll: async (): Promise<{ success: boolean; data: { campaigns: Campaign[] }; message?: string }> => {
     return await apiClient.get('/campaigns');
@@ -187,18 +244,35 @@ export const campaignApi = {
     return await apiClient.put(`/campaigns/${id}/status`, { status });
   },
 
-  launch: async (id: string): Promise<{ 
+  launch: async (id: string, options?: {
+    sendType?: 'immediate' | 'scheduled';
+    scheduledFor?: string; // ISO date string
+    rateLimit?: number;   // emails per hour
+  }): Promise<{ 
     success: boolean; 
     data: { 
       campaignId: string;
-      sentCount: number;
-      failedCount: number;
-      totalProcessed: number;
-      errors: string[];
+      sendType: string;
+      scheduledFor?: string;
+      jobsCreated: number;
+      totalRecipients: number;
+      rateLimit: number;
+      estimatedCompletionTime?: string;
+      scheduleInfo?: any;
+      // Legacy support
+      sentCount?: number;
+      failedCount?: number;
+      totalProcessed?: number;
+      errors?: string[];
     }; 
     message?: string 
   }> => {
-    return await apiClient.post(`/campaigns/${id}/launch`, {});
+    const payload = {
+      sendType: options?.sendType || 'immediate',
+      scheduledFor: options?.scheduledFor,
+      rateLimit: options?.rateLimit || 100
+    };
+    return await apiClient.post(`/campaigns/${id}/launch`, payload);
   },
 
   // Lead management

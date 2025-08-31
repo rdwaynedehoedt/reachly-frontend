@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MagnifyingGlassIcon,
   BellIcon,
   Bars3Icon,
   XMarkIcon,
@@ -29,12 +28,8 @@ const ModernTopbar: React.FC<ModernTopbarProps> = ({
   onLogout,
   onCreateNew
 }) => {
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
-  const [hasNotifications, setHasNotifications] = useState(true);
 
-  // Adjust left margin based on sidebar state
-  const leftMargin = sidebarExpanded ? 'ml-72' : 'ml-16';
+  const [hasNotifications, setHasNotifications] = useState(true);
 
   return (
     <header
@@ -44,8 +39,8 @@ const ModernTopbar: React.FC<ModernTopbarProps> = ({
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           
-          {/* Left Section - Mobile menu & Search */}
-          <div className="flex items-center flex-1 max-w-lg">
+          {/* Left Section - Mobile menu */}
+          <div className="flex items-center">
             {/* Mobile menu button */}
             <button
               onClick={onMobileMenuToggle}
@@ -57,23 +52,6 @@ const ModernTopbar: React.FC<ModernTopbarProps> = ({
                 <Bars3Icon className="h-5 w-5" />
               )}
             </button>
-
-            {/* Simple Search Bar */}
-            <div className="relative flex-1 ml-4 md:ml-0">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-4 w-4 text-gray-400" />
-              </div>
-              
-              <input
-                type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
-                onBlur={() => setSearchFocused(false)}
-                placeholder="Search..."
-                className="block w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:bg-white focus:border-gray-300 focus:outline-none placeholder-gray-400"
-              />
-            </div>
           </div>
 
           {/* Right Section - Simple Actions */}

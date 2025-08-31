@@ -320,10 +320,10 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
   };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Add Leads to Campaign</h2>
-        <p className="text-gray-500 mt-1">Upload a CSV file or add leads manually</p>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-xl font-medium text-gray-900 mb-6">Add Leads to Campaign</h2>
+        <p className="text-gray-600">Upload a CSV file or add leads manually</p>
       </div>
 
       {/* Method Selection - Only show if not in CSV mapping flow */}
@@ -382,9 +382,9 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
 
       {/* Upload Method */}
       {importMethod === 'upload' && currentStep === 'upload' && (
-        <div className="max-w-md mx-auto">
+        <div className="max-w-2xl mx-auto">
           <div
-            className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+            className={`relative border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
               dragActive 
                 ? 'border-blue-400 bg-blue-50' 
                 : 'border-gray-300 hover:border-gray-400'
@@ -403,11 +403,11 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
               disabled={isProcessing}
             />
             
-            <DocumentArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <p className="mt-2 text-sm text-gray-600">
+            <DocumentArrowUpIcon className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+            <p className="text-lg text-gray-700 font-medium mb-2">
               {isProcessing ? 'Processing...' : 'Drop your CSV file here, or click to browse'}
             </p>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-sm text-gray-500">
               Upload your CSV file - you'll be able to map columns in the next step
             </p>
           </div>
@@ -508,39 +508,7 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
             </div>
           </div>
 
-          {/* Data Preview */}
-          <div className="bg-white border border-gray-200 rounded-lg p-4">
-            <h4 className="font-medium text-gray-900 mb-3">Preview (First 3 rows)</h4>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    {columnMappings
-                      .filter(m => m.leadField !== 'do_not_import')
-                      .map(mapping => (
-                        <th key={mapping.csvColumn} className="text-left py-2 px-3 font-medium text-gray-700">
-                          {mapping.leadField}
-                          {mapping.leadField === 'email' && <span className="text-red-500">*</span>}
-                        </th>
-                      ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {csvData.rows.slice(0, 3).map((row, index) => (
-                    <tr key={index} className="border-b">
-                      {columnMappings
-                        .filter(m => m.leadField !== 'do_not_import')
-                        .map(mapping => (
-                          <td key={mapping.csvColumn} className="py-2 px-3 text-gray-600">
-                            {row[mapping.csvColumn] || '(empty)'}
-                          </td>
-                        ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+
 
           {/* Action Buttons */}
           <div className="flex justify-between">
@@ -567,49 +535,49 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
 
       {/* Manual Method */}
       {importMethod === 'manual' && (
-        <div className="max-w-md mx-auto space-y-4">
+        <div className="max-w-2xl mx-auto space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <input
               type="email"
               placeholder="Email *"
               value={manualLead.email}
               onChange={(e) => setManualLead({ ...manualLead, email: e.target.value })}
-              className="col-span-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="col-span-2 px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
             />
             <input
               type="text"
               placeholder="First Name"
               value={manualLead.firstName || ''}
               onChange={(e) => setManualLead({ ...manualLead, firstName: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
             />
             <input
               type="text"
               placeholder="Last Name"
               value={manualLead.lastName || ''}
               onChange={(e) => setManualLead({ ...manualLead, lastName: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
             />
             <input
               type="text"
               placeholder="Company"
               value={manualLead.companyName || ''}
               onChange={(e) => setManualLead({ ...manualLead, companyName: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
             />
             <input
               type="text"
               placeholder="Job Title"
               value={manualLead.jobTitle || ''}
               onChange={(e) => setManualLead({ ...manualLead, jobTitle: e.target.value })}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
             />
           </div>
           <button
             onClick={addManualLead}
-            className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Add Lead
+            Add Lead to Campaign
           </button>
         </div>
       )}

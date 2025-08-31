@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useEmail } from '../../contexts/EmailContext';
 import { LoadingScreen, Button } from '@/components/ui';
@@ -66,6 +66,7 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
   const { emailAccounts } = useEmail();
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
@@ -254,19 +255,28 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
         // Then launch it
         const launchResponse = await campaignApi.launch(campaignId);
         if (launchResponse.success) {
-          alert(`🎉 Campaign launched successfully! ${launchResponse.data.sentCount} emails sent.`);
+          // Show top corner notification
+          setNotification({message: 'Campaign launched successfully!', type: 'success'});
+          setTimeout(() => {
+            setNotification(null);
+            onSuccess();
+          }, 2000);
         } else {
-          alert(`❌ Campaign created but launch failed: ${launchResponse.message}`);
+          setNotification({message: `Campaign created but launch failed: ${launchResponse.message}`, type: 'error'});
+          setTimeout(() => setNotification(null), 3000);
         }
       } else {
-        alert('✅ Campaign created successfully!');
+        // Show success notification for draft
+        setNotification({message: 'Campaign created successfully!', type: 'success'});
+        setTimeout(() => {
+          setNotification(null);
+          onSuccess();
+        }, 2000);
       }
-
-      // Call success callback to refresh and close
-      onSuccess();
     } catch (error) {
       console.error('Error creating campaign:', error);
-      alert('Failed to create campaign. Please try again.');
+      setNotification({message: 'Failed to create campaign. Please try again.', type: 'error'});
+      setTimeout(() => setNotification(null), 3000);
     } finally {
       setLoading(false);
     }
@@ -276,78 +286,78 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
     return null;
   }
 
+
+
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
+    <div className="min-h-screen bg-gray-50">
+      {/* Top Corner Notification */}
+      {notification && (
+        <div className={`fixed top-4 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
+          notification.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`}>
+          {notification.message}
+        </div>
+      )}
+      
+      <div className="max-w-7xl mx-auto py-8 px-12">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="relative">
+            <button
               onClick={onCancel}
-              leftIcon={<XMarkIcon className="h-4 w-4" />}
-              size="sm"
+              className="absolute left-0 top-0 text-gray-400 hover:text-gray-600"
+              title="Cancel and return to campaigns"
             >
-              Cancel
-            </Button>
-            <div className="h-6 w-px bg-gray-300" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New Campaign</h1>
-              <p className="mt-1 text-sm text-gray-500">Step {currentStep} of {steps.length}</p>
-            </div>
+              <XMarkIcon className="h-5 w-5" />
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Progress Steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-8">
-          {steps.map((step, index) => {
-            const isCompleted = currentStep > step.id;
-            const isCurrent = currentStep === step.id;
-            const IconComponent = step.icon;
-
-            return (
-              <div key={step.id} className="flex flex-col items-center flex-1">
-                <div className="flex items-center w-full">
-                  <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all duration-200 ${
+        {/* Cool Icon Progress Bar */}
+        <div className="mb-12">
+          <div className="flex items-center justify-center">
+            {steps.map((step, index) => {
+              const isCompleted = index < currentStep - 1;
+              const isCurrent = index === currentStep - 1;
+              const IconComponent = step.icon;
+              // Line should be green if we've moved past this step (i.e., next step is current or completed)
+              const lineCompleted = index < currentStep - 1;
+              
+              return (
+                <Fragment key={step.id}>
+                  {/* Step Icon */}
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 ${
                     isCompleted 
-                      ? 'bg-green-100 border-green-500 text-green-600' 
+                      ? 'bg-green-500 text-white' 
                       : isCurrent 
-                      ? 'bg-blue-100 border-blue-500 text-blue-600' 
-                      : 'bg-gray-100 border-gray-300 text-gray-400'
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-200 text-gray-400'
                   }`}>
                     {isCompleted ? (
-                      <CheckCircleIconSolid className="h-6 w-6" />
+                      <CheckCircleIconSolid className="h-5 w-5" />
                     ) : (
                       <IconComponent className="h-5 w-5" />
                     )}
                   </div>
                   
+                  {/* Connection Line */}
                   {index < steps.length - 1 && (
-                    <div className={`flex-1 h-0.5 mx-4 ${
-                      isCompleted ? 'bg-green-500' : 'bg-gray-300'
-                    }`} />
+                    <div className="w-16 h-0.5 mx-4 bg-gray-200 relative overflow-hidden">
+                      <div 
+                        className={`h-full absolute left-0 top-0 transition-all duration-500 ease-out ${
+                          lineCompleted ? 'bg-green-500 w-full' : 'bg-gray-200 w-0'
+                        }`}
+                      />
+                    </div>
                   )}
-                </div>
-                
-                <div className="mt-3 text-center">
-                  <p className={`text-sm font-medium ${
-                    isCurrent ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'
-                  }`}>
-                    {step.name}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">{step.description}</p>
-                </div>
-              </div>
-            );
-          })}
+                </Fragment>
+              );
+            })}
+          </div>
         </div>
-      </div>
 
-      {/* Step Content */}
-      <div className="bg-white shadow-sm rounded-lg overflow-hidden mb-6">
-        <div className="p-6">
+        {/* Step Content - Plain without box */}
+        <div className="max-w-5xl mx-auto mb-8">
           {currentStep === 1 && (
             <BasicInfoStep formData={formData} updateFormData={updateFormData} />
           )}
@@ -373,42 +383,45 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
         </div>
 
         {/* Navigation */}
-        <div className="bg-gray-50 px-6 py-4 flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            leftIcon={<ArrowLeftIcon className="h-4 w-4" />}
-          >
-            Previous
-          </Button>
+        <div className="flex items-center justify-center pt-8">
+          <div className="flex items-center space-x-6">
+            {currentStep > 1 && (
+              <button
+                onClick={prevStep}
+                className="px-6 py-3 text-gray-500 hover:text-gray-700 flex items-center space-x-2 font-medium"
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
+                <span>Previous</span>
+              </button>
+            )}
 
-          <div className="flex space-x-3">
             {currentStep === steps.length ? (
               <>
-                <Button
+                <button
                   onClick={() => handleSubmit(false)}
                   disabled={!canProceed() || loading}
-                  variant="outline"
+                  className="px-6 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50 font-medium" 
                 >
                   {loading ? 'Creating...' : 'Save Draft'}
-                </Button>
-                <Button
+                </button>
+                <button
                   onClick={() => handleSubmit(true)}
                   disabled={!canProceed() || loading}
-                  leftIcon={<RocketLaunchIcon className="h-4 w-4" />}
+                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 flex items-center space-x-2 font-medium"
                 >
-                  {loading ? 'Launching...' : 'Create & Launch'}
-                </Button>
+                  <RocketLaunchIcon className="h-4 w-4" />
+                  <span>{loading ? 'Launching...' : 'Create & Launch'}</span>
+                </button>
               </>
             ) : (
-              <Button
+              <button
                 onClick={nextStep}
                 disabled={!canProceed()}
-                rightIcon={<ArrowRightIcon className="h-4 w-4" />}
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 flex items-center space-x-2 font-medium"
               >
-                Next
-              </Button>
+                <span>Next</span>
+                <ArrowRightIcon className="h-4 w-4" />
+              </button>
             )}
           </div>
         </div>
@@ -422,71 +435,37 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
 
 function BasicInfoStep({ formData, updateFormData }: { formData: FormData; updateFormData: (updates: Partial<FormData>) => void }) {
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Campaign Information</h2>
-        <p className="text-gray-500 mt-1">Give your campaign a name and description</p>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-medium text-black mb-8">Campaign Information</h2>
       </div>
-
-      <div className="max-w-md mx-auto space-y-6">
+      
+      <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-base font-semibold text-gray-800 mb-4">
             Campaign Name *
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => updateFormData({ name: e.target.value })}
-            placeholder="e.g., Q1 Product Launch"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+            placeholder="Campaign Name"
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500"
             autoFocus
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description
+          <label className="block text-base font-semibold text-gray-800 mb-4">
+            Description <span className="font-normal text-gray-500">(optional)</span>
           </label>
           <textarea
             value={formData.description}
             onChange={(e) => updateFormData({ description: e.target.value })}
-            placeholder="Brief description of your campaign goals..."
-            rows={3}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 resize-none"
+            placeholder="Description"
+            rows={4}
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500 resize-none"
           />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Campaign Type
-          </label>
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              type="button"
-              onClick={() => updateFormData({ type: 'single' })}
-              className={`p-4 border rounded-lg text-left transition-all duration-200 ${
-                formData.type === 'single'
-                  ? 'border-blue-500 bg-blue-50 text-blue-900'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-            >
-              <div className="font-medium">Single Email</div>
-              <div className="text-sm text-gray-500 mt-1">Send one email to all leads</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => updateFormData({ type: 'sequence' })}
-              className={`p-4 border rounded-lg text-left transition-all duration-200 ${
-                formData.type === 'sequence'
-                  ? 'border-blue-500 bg-blue-50 text-blue-900'
-                  : 'border-gray-300 hover:border-gray-400'
-              }`}
-              disabled
-            >
-              <div className="font-medium">Email Sequence</div>
-              <div className="text-sm text-gray-500 mt-1">Coming soon</div>
-            </button>
-          </div>
         </div>
       </div>
     </div>
@@ -495,36 +474,35 @@ function BasicInfoStep({ formData, updateFormData }: { formData: FormData; updat
 
 function EmailSettingsStep({ formData, updateFormData, emailAccounts }: { formData: FormData; updateFormData: (updates: Partial<FormData>) => void; emailAccounts: any[] }) {
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Email Settings</h2>
-        <p className="text-gray-500 mt-1">Configure your sending details</p>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-medium text-black mb-8">Email Settings</h2>
       </div>
-
-      <div className="max-w-md mx-auto space-y-6">
+      
+      <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-base font-semibold text-gray-800 mb-4">
             From Name *
           </label>
           <input
             type="text"
             value={formData.fromName}
             onChange={(e) => updateFormData({ fromName: e.target.value })}
-            placeholder="Your Name"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="From Name"
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-base font-semibold text-gray-800 mb-4">
             From Email *
           </label>
           <select
             value={formData.fromEmail}
             onChange={(e) => updateFormData({ fromEmail: e.target.value })}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black"
           >
-            <option value="">Select email account</option>
+            <option value="" className="text-gray-500">Select email account</option>
             {emailAccounts.map((account) => (
               <option key={account.email} value={account.email}>
                 {account.email}
@@ -534,15 +512,15 @@ function EmailSettingsStep({ formData, updateFormData, emailAccounts }: { formDa
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Reply-To Email
+          <label className="block text-base font-semibold text-gray-800 mb-4">
+            Reply-To Email <span className="font-normal text-gray-500">(optional)</span>
           </label>
           <input
             type="email"
             value={formData.replyToEmail}
             onChange={(e) => updateFormData({ replyToEmail: e.target.value })}
-            placeholder="Optional different reply address"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="Reply-To Email"
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500"
           />
         </div>
       </div>
@@ -564,260 +542,92 @@ function AddLeadsStep({ formData, updateFormData }: { formData: FormData; update
 }
 
 function EmailTemplateStep({ formData, updateFormData }: { formData: FormData; updateFormData: (updates: Partial<FormData>) => void }) {
-  const [activeField, setActiveField] = useState<'subject' | 'body'>('subject');
-  const [subjectCursorPos, setSubjectCursorPos] = useState(0);
-  const [bodyCursorPos, setBodyCursorPos] = useState(0);
-  const [customFields, setCustomFields] = useState<Array<{name: string, label: string, example: string}>>([]);
-  const [loadingFields, setLoadingFields] = useState(false);
-  
-  // Standard personalization variables
-  const standardVariables = [
-    { name: 'firstName', label: 'First Name', example: 'John' },
-    { name: 'lastName', label: 'Last Name', example: 'Doe' },
-    { name: 'companyName', label: 'Company Name', example: 'TechCorp Inc' },
-    { name: 'jobTitle', label: 'Job Title', example: 'Software Engineer' },
-    { name: 'phone', label: 'Phone', example: '+1-555-0123' },
-    { name: 'website', label: 'Website', example: 'techcorp.com' }
+  // Common personalization variables
+  const variables = [
+    { name: 'firstName', example: 'John' },
+    { name: 'lastName', example: 'Doe' },
+    { name: 'companyName', example: 'TechCorp Inc' },
+    { name: 'jobTitle', example: 'Software Engineer' }
   ];
 
-  // Fetch custom fields from leads in the campaign
-  useEffect(() => {
-    const fetchCustomFields = async () => {
-      if (formData.campaignLeads && formData.campaignLeads.length > 0) {
-        setLoadingFields(true);
-        try {
-          // Extract all custom field keys from campaign leads
-          const customFieldKeys = new Set<string>();
-          formData.campaignLeads.forEach(lead => {
-            if (lead.customFields && typeof lead.customFields === 'object') {
-              Object.keys(lead.customFields).forEach(key => {
-                customFieldKeys.add(key);
-              });
-            }
-          });
-
-          // Convert to variables format
-          const customVars = Array.from(customFieldKeys).map(fieldName => ({
-            name: fieldName,
-            label: fieldName.charAt(0).toUpperCase() + fieldName.slice(1),
-            example: formData.campaignLeads.find(lead => 
-              lead.customFields && lead.customFields[fieldName]
-            )?.customFields?.[fieldName] || 'Sample Value'
-          }));
-
-          setCustomFields(customVars);
-        } catch (error) {
-          console.error('Error extracting custom fields:', error);
-        } finally {
-          setLoadingFields(false);
-        }
-      }
-    };
-
-    fetchCustomFields();
-  }, [formData.campaignLeads]);
-
-  // All available variables (standard + custom)
-  const allVariables = [...standardVariables, ...customFields];
-
-  // Insert variable at cursor position
-  const insertVariable = (variableName: string) => {
+  const insertVariable = (variableName: string, targetField: 'subject' | 'body') => {
     const variable = `{{${variableName}}}`;
     
-    if (activeField === 'subject') {
-      const currentSubject = formData.subject || '';
-      const beforeCursor = currentSubject.slice(0, subjectCursorPos);
-      const afterCursor = currentSubject.slice(subjectCursorPos);
-      const newSubject = beforeCursor + variable + afterCursor;
-      updateFormData({ subject: newSubject });
-      // Update cursor position to after inserted variable
-      setTimeout(() => setSubjectCursorPos(subjectCursorPos + variable.length), 0);
+    if (targetField === 'subject') {
+      updateFormData({ subject: (formData.subject || '') + variable });
     } else {
-      const currentBody = formData.bodyText || '';
-      const beforeCursor = currentBody.slice(0, bodyCursorPos);
-      const afterCursor = currentBody.slice(bodyCursorPos);
-      const newBody = beforeCursor + variable + afterCursor;
       updateFormData({ 
-        bodyText: newBody,
-        bodyHtml: `<p>${newBody.replace(/\n/g, '</p><p>')}</p>`
+        bodyText: (formData.bodyText || '') + variable,
+        bodyHtml: `<p>${((formData.bodyText || '') + variable).replace(/\n/g, '</p><p>')}</p>`
       });
-      // Update cursor position to after inserted variable
-      setTimeout(() => setBodyCursorPos(bodyCursorPos + variable.length), 0);
     }
   };
 
-  // Track cursor position in text fields
-  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    updateFormData({ subject: e.target.value });
-    setSubjectCursorPos(e.target.selectionStart || 0);
-  };
-
-  const handleBodyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    updateFormData({ 
-      bodyText: e.target.value, 
-      bodyHtml: `<p>${e.target.value.replace(/\n/g, '</p><p>')}</p>` 
-    });
-    setBodyCursorPos(e.target.selectionStart || 0);
-  };
-
-  const handleSubjectCursorMove = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSubjectCursorPos(e.target.selectionStart || 0);
-  };
-
-  const handleBodyCursorMove = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setBodyCursorPos(e.target.selectionStart || 0);
-  };
-
-  // Create preview with personalized content
-  const createPreview = (content: string) => {
-    if (!content) return '';
-    
-    let preview = content;
-    
-    // Replace standard variables
-    const standardReplacements: Record<string, string> = {
-      '{{firstName}}': 'John',
-      '{{lastName}}': 'Doe', 
-      '{{companyName}}': 'TechCorp Inc',
-      '{{jobTitle}}': 'Software Engineer',
-      '{{phone}}': '+1-555-0123',
-      '{{website}}': 'techcorp.com'
-    };
-
-    // Apply standard replacements
-    Object.entries(standardReplacements).forEach(([placeholder, value]) => {
-      preview = preview.replace(new RegExp(placeholder, 'g'), value);
-    });
-
-    // Replace custom field variables with their examples
-    customFields.forEach(field => {
-      const placeholder = `{{${field.name}}}`;
-      preview = preview.replace(new RegExp(placeholder, 'g'), field.example);
-    });
-
-    return preview;
-  };
-
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Email Template</h2>
-        <p className="text-gray-500 mt-1">Design your email content with personalization</p>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-2xl font-medium text-black mb-8">Email Template</h2>
       </div>
-
-      <div className="max-w-4xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Template Editor */}
-          <div className="lg:col-span-2 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Subject Line *
-              </label>
-              <input
-                type="text"
-                value={formData.subject}
-                onChange={handleSubjectChange}
-                onSelect={handleSubjectCursorMove}
-                onFocus={() => setActiveField('subject')}
-                placeholder="e.g., Quick question about {{companyName}}"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Content *
-              </label>
-              <textarea
-                value={formData.bodyText}
-                onChange={handleBodyChange}
-                onSelect={handleBodyCursorMove}
-                onFocus={() => setActiveField('body')}
-                placeholder={`Hi {{firstName}},\n\nI hope this email finds you well. I noticed that {{companyName}} is doing great work in the industry.\n\nI'd love to connect and discuss how we might be able to help {{companyName}} achieve even greater success.\n\nBest regards,\nYour Name`}
-                rows={12}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                Click on variables in the sidebar to insert them into your {activeField === 'subject' ? 'subject' : 'email content'}
-              </p>
+      
+      <div className="max-w-3xl mx-auto space-y-6">
+        <div>
+          <div className="flex items-center justify-between mb-5">
+            <label className="block text-base font-semibold text-gray-800">
+              Subject Line *
+            </label>
+            <div className="flex gap-2">
+              {variables.map((variable) => (
+                <button
+                  key={variable.name}
+                  onClick={() => insertVariable(variable.name, 'subject')}
+                  className="text-sm px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium"
+                  title={`Insert {{${variable.name}}}`}
+                >
+                  {variable.name}
+                </button>
+              ))}
             </div>
           </div>
+          <input
+            type="text"
+            value={formData.subject}
+            onChange={(e) => updateFormData({ subject: e.target.value })}
+            placeholder="Subject Line"
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500"
+          />
+        </div>
 
-          {/* Variable Picker Sidebar */}
-          <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h3 className="font-medium text-gray-900 mb-3">Personalization Variables</h3>
-              <p className="text-xs text-gray-600 mb-4">
-                Click to insert into {activeField === 'subject' ? 'subject line' : 'email body'}
-              </p>
-              
-              <div className="space-y-2">
-                {loadingFields && (
-                  <div className="text-xs text-gray-500 text-center py-2">
-                    Loading custom fields...
-                  </div>
-                )}
-                {allVariables.map((variable, index) => {
-                  const isCustomField = index >= standardVariables.length;
-                  return (
-                    <button
-                      key={variable.name}
-                      onClick={() => insertVariable(variable.name)}
-                      className={`w-full text-left p-3 border rounded-lg hover:border-blue-300 transition-colors group ${
-                        isCustomField 
-                          ? 'bg-green-50 border-green-200 hover:bg-green-100' 
-                          : 'bg-white border-gray-200 hover:bg-blue-50'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-gray-900 text-sm flex items-center gap-1">
-                            {`{{${variable.name}}}`}
-                            {isCustomField && (
-                              <span className="text-xs bg-green-600 text-white px-1 rounded">Custom</span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500">{variable.label}</div>
-                        </div>
-                        <div className="text-xs text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity">
-                          Insert
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-400 mt-1">
-                        e.g., "{variable.example}"
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Preview */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h4 className="font-medium text-blue-900 mb-2">Preview</h4>
-              <div className="text-xs text-blue-800">
-                <div className="mb-2">
-                  <strong>Subject:</strong><br />
-                  <span className="italic">
-                    {formData.subject ? 
-                      createPreview(formData.subject)
-                      : 'Enter subject line...'
-                    }
-                  </span>
-                </div>
-                <div>
-                  <strong>Body:</strong><br />
-                  <div className="italic whitespace-pre-wrap max-h-32 overflow-y-auto">
-                    {formData.bodyText ? 
-                      createPreview(formData.bodyText)
-                      : 'Enter email content...'
-                    }
-                  </div>
-                </div>
-              </div>
+        <div>
+          <div className="flex items-center justify-between mb-5">
+            <label className="block text-base font-semibold text-gray-800">
+              Email Content *
+            </label>
+            <div className="flex gap-2">
+              {variables.map((variable) => (
+                <button
+                  key={variable.name}
+                  onClick={() => insertVariable(variable.name, 'body')}
+                  className="text-sm px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 font-medium"
+                  title={`Insert {{${variable.name}}}`}
+                >
+                  {variable.name}
+                </button>
+              ))}
             </div>
           </div>
+          <textarea
+            value={formData.bodyText}
+            onChange={(e) => updateFormData({ 
+              bodyText: e.target.value, 
+              bodyHtml: `<p>${e.target.value.replace(/\n/g, '</p><p>')}</p>` 
+            })}
+            placeholder="Email content..."
+            rows={10}
+            className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500 resize-none"
+          />
+          <p className="text-sm text-gray-600 mt-4">
+            Use the buttons above to add personalization variables like <code className="bg-gray-100 px-2 py-1 rounded text-xs">{`{{firstName}}`}</code> or <code className="bg-gray-100 px-2 py-1 rounded text-xs">{`{{companyName}}`}</code>
+          </p>
         </div>
       </div>
     </div>
@@ -826,55 +636,56 @@ function EmailTemplateStep({ formData, updateFormData }: { formData: FormData; u
 
 function ReviewStep({ formData }: { formData: FormData }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-12">
       <div className="text-center">
-        <h2 className="text-lg font-medium text-gray-900">Ready to Launch</h2>
-        <p className="text-gray-500 mt-1">Review your campaign details before launching</p>
+        <h2 className="text-3xl font-semibold text-black mb-4">Ready to Launch</h2>
+        <p className="text-gray-600">Review your campaign details before launching</p>
       </div>
-
-      <div className="max-w-2xl mx-auto space-y-6">
+      
+      <div className="max-w-4xl mx-auto space-y-8">
         {/* Campaign Summary */}
-        <div className="bg-gray-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Campaign Summary</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-gray-600">Campaign Name</p>
-              <p className="font-medium">{formData.name}</p>
+        <div className="bg-gray-50 rounded-xl p-8">
+          <h3 className="text-xl font-semibold text-black mb-6">Campaign Summary</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-base text-gray-600">Campaign Name:</span>
+              <span className="font-semibold text-lg">{formData.name}</span>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">From</p>
-              <p className="font-medium">{formData.fromName} &lt;{formData.fromEmail}&gt;</p>
+            <div className="flex items-center justify-between">
+              <span className="text-base text-gray-600">From:</span>
+              <span className="font-semibold">{formData.fromName} &lt;{formData.fromEmail}&gt;</span>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Recipients</p>
-              <p className="font-medium">{formData.campaignLeads.length} leads</p>
+            <div className="flex items-center justify-between">
+              <span className="text-base text-gray-600">Recipients:</span>
+              <span className="font-semibold text-blue-600">{formData.campaignLeads.length} leads</span>
             </div>
-            <div>
-              <p className="text-sm text-gray-600">Subject</p>
-              <p className="font-medium">{formData.subject}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-base text-gray-600">Subject:</span>
+              <span className="font-semibold">{formData.subject}</span>
             </div>
           </div>
         </div>
 
-        {/* Campaign Leads Preview */}
-        <div className="bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Campaign Recipients ({formData.campaignLeads.length})
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto">
-            {formData.campaignLeads.slice(0, 10).map((lead, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <CheckCircleIconSolid className="h-4 w-4 text-blue-600" />
-                <span className="text-sm">{lead.firstName} {lead.lastName} - {lead.email}</span>
-              </div>
-            ))}
-            {formData.campaignLeads.length > 10 && (
-              <p className="text-sm text-gray-600 col-span-2">
-                + {formData.campaignLeads.length - 10} more leads
-              </p>
-            )}
+        {/* Preview first few leads */}
+        {formData.campaignLeads.length > 0 && (
+          <div className="bg-blue-50 rounded-xl p-8">
+            <h3 className="text-xl font-semibold text-black mb-6">Recipients Preview</h3>
+            <div className="space-y-3">
+              {formData.campaignLeads.slice(0, 5).map((lead, index) => (
+                <div key={index} className="text-base text-gray-700 flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>{lead.firstName} {lead.lastName} - {lead.email}</span>
+                </div>
+              ))}
+              {formData.campaignLeads.length > 5 && (
+                <div className="text-base text-gray-600 flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  <span>+ {formData.campaignLeads.length - 5} more recipients</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
