@@ -5,7 +5,7 @@ const cn = (...classes: (string | undefined | boolean | null)[]) => {
   return classes.filter(Boolean).join(' ');
 };
 
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   helperText?: string;
   error?: string;
