@@ -598,31 +598,103 @@ function EmailSettingsStep({ formData, updateFormData, emailAccounts }: { formDa
           </div>
         </div>
 
-        {/* Mass Email Settings */}
+        {/* Mass Email Performance Settings */}
         {formData.isMassEmail && (
-          <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
-            <div className="flex items-center mb-4">
-              <RocketLaunchIcon className="h-5 w-5 text-blue-600 mr-2" />
-              <h3 className="text-lg font-semibold text-gray-900">Mass Email Configuration</h3>
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-xl border border-blue-200">
+            <div className="flex items-center mb-6">
+              <RocketLaunchIcon className="h-6 w-6 text-blue-600 mr-3" />
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Performance Configuration</h3>
+                <p className="text-sm text-gray-600">Choose your mass email delivery speed</p>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Concurrent Processing
-              </label>
-              <select
-                value={formData.massEmailConcurrency}
-                onChange={(e) => updateFormData({ massEmailConcurrency: parseInt(e.target.value) })}
-                className="w-full px-4 py-3 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 outline-none"
-              >
-                <option value={50}>50 emails at once</option>
-                <option value={100}>100 emails at once</option>
-                <option value={250}>250 emails at once</option>
-                <option value={500}>500 emails at once</option>
-                <option value={1000}>1000 emails at once</option>
-              </select>
-              <p className="text-xs text-blue-600 mt-1">
-                Higher concurrency = faster campaign delivery
-              </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[
+                { 
+                  value: 100, 
+                  title: "Standard", 
+                  subtitle: "100 emails/batch", 
+                  time: "~2-5 min",
+                  color: "green" as const,
+                  description: "Reliable performance"
+                },
+                { 
+                  value: 250, 
+                  title: "High Speed", 
+                  subtitle: "250 emails/batch", 
+                  time: "~1-3 min",
+                  color: "blue" as const,
+                  description: "Faster delivery"
+                },
+                { 
+                  value: 500, 
+                  title: "Maximum", 
+                  subtitle: "500 emails/batch", 
+                  time: "~30sec-2min",
+                  color: "purple" as const,
+                  description: "Ultimate speed"
+                }
+              ].map((option) => {
+                const isSelected = formData.massEmailConcurrency === option.value;
+                const colorClasses = {
+                  green: {
+                    border: isSelected ? 'border-green-300 ring-2 ring-green-500/20' : 'border-green-200 hover:border-green-300',
+                    bg: isSelected ? 'bg-green-50' : 'bg-white hover:bg-green-50/50',
+                    title: 'text-green-700',
+                    subtitle: 'text-green-600'
+                  },
+                  blue: {
+                    border: isSelected ? 'border-blue-300 ring-2 ring-blue-500/20' : 'border-blue-200 hover:border-blue-300',
+                    bg: isSelected ? 'bg-blue-50' : 'bg-white hover:bg-blue-50/50',
+                    title: 'text-blue-700',
+                    subtitle: 'text-blue-600'
+                  },
+                  purple: {
+                    border: isSelected ? 'border-purple-300 ring-2 ring-purple-500/20' : 'border-purple-200 hover:border-purple-300',
+                    bg: isSelected ? 'bg-purple-50' : 'bg-white hover:bg-purple-50/50',
+                    title: 'text-purple-700',
+                    subtitle: 'text-purple-600'
+                  }
+                } as const;
+                
+                const currentColorClass = colorClasses[option.color];
+                
+                return (
+                  <div
+                    key={option.value}
+                    onClick={() => updateFormData({ massEmailConcurrency: option.value })}
+                    className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${currentColorClass.border} ${currentColorClass.bg}`}
+                  >
+                    <div className="text-center">
+                      <div className={`text-lg font-bold ${currentColorClass.title}`}>
+                        {option.title}
+                      </div>
+                      <div className={`text-sm font-medium mt-1 ${currentColorClass.subtitle}`}>
+                        {option.subtitle}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-2">
+                        Est. time: {option.time}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {option.description}
+                      </div>
+                      {isSelected && (
+                        <div className="mt-3">
+                          <CheckCircleIcon className="h-5 w-5 text-blue-600 mx-auto" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="mt-6 bg-white rounded-lg p-4 border border-blue-100">
+              <div className="flex items-center text-sm text-gray-600">
+                <InformationCircleIcon className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" />
+                <span>All emails will be sent instantly with your selected performance level. Higher speeds use more server resources.</span>
+              </div>
             </div>
           </div>
         )}
