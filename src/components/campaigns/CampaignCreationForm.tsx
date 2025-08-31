@@ -38,6 +38,10 @@ interface FormData {
   timezone: string;
   dailySendLimit: number;
   
+  // Email Sending Options
+  isMassEmail: boolean;  // true = send all at once, false = distributed sending
+  massEmailConcurrency: number;  // how many emails to send simultaneously for mass emails
+  
   // Template
   subject: string;
   bodyHtml: string;
@@ -78,6 +82,8 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
     scheduledAt: '',
     timezone: 'UTC',
     dailySendLimit: 50,
+    isMassEmail: false,  // Default to distributed sending
+    massEmailConcurrency: 100,  // Default concurrent emails for mass sending
     subject: '',
     bodyHtml: '',
     bodyText: '',
@@ -151,6 +157,8 @@ const CampaignCreationForm: React.FC<CampaignCreationFormProps> = ({ onCancel, o
         scheduled_at: formData.scheduledAt || undefined,
         timezone: formData.timezone,
         daily_send_limit: formData.dailySendLimit,
+        is_mass_email: formData.isMassEmail,
+        mass_email_concurrency: formData.massEmailConcurrency,
       };
 
       const campaignResponse = await campaignApi.create(campaignData);
@@ -523,6 +531,122 @@ function EmailSettingsStep({ formData, updateFormData, emailAccounts }: { formDa
             className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500"
           />
         </div>
+
+        {/* Email Sending Type */}
+        <div>
+          <label className="block text-base font-semibold text-gray-800 mb-4">
+            Email Sending Type
+          </label>
+          <div className="space-y-4">
+            <div 
+              className={`p-4 rounded-xl cursor-pointer transition-all ${
+                !formData.isMassEmail 
+                  ? 'bg-blue-50 border-2 border-blue-200 ring-2 ring-blue-500/10' 
+                  : 'bg-gray-50/50 border-2 border-transparent hover:border-gray-200'
+              }`}
+              onClick={() => updateFormData({ isMassEmail: false })}
+            >
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  checked={!formData.isMassEmail}
+                  onChange={() => updateFormData({ isMassEmail: false })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <div className="ml-3 flex items-center">
+                  <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
+                  <div>
+                    <label className="text-base font-medium text-gray-900 cursor-pointer">
+                      Distributed Sending <span className="text-green-600 font-semibold">(Recommended)</span>
+                    </label>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Emails sent gradually with rate limiting for better deliverability
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div 
+              className={`p-4 rounded-xl cursor-pointer transition-all ${
+                formData.isMassEmail 
+                  ? 'bg-blue-50 border-2 border-blue-200 ring-2 ring-blue-500/10' 
+                  : 'bg-gray-50/50 border-2 border-transparent hover:border-gray-200'
+              }`}
+              onClick={() => updateFormData({ isMassEmail: true })}
+            >
+              <div className="flex items-center">
+                <input
+                  type="radio"
+                  checked={formData.isMassEmail}
+                  onChange={() => updateFormData({ isMassEmail: true })}
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                />
+                <div className="ml-3 flex items-center">
+                  <RocketLaunchIcon className="h-5 w-5 text-blue-600 mr-2" />
+                  <div>
+                    <label className="text-base font-medium text-gray-900 cursor-pointer">
+                      Mass Email <span className="text-blue-600 font-semibold">(High Performance)</span>
+                    </label>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Send all emails simultaneously for maximum speed and impact
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mass Email Settings */}
+        {formData.isMassEmail && (
+          <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
+            <div className="flex items-center mb-4">
+              <RocketLaunchIcon className="h-5 w-5 text-blue-600 mr-2" />
+              <h3 className="text-lg font-semibold text-gray-900">Mass Email Configuration</h3>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Concurrent Processing
+              </label>
+              <select
+                value={formData.massEmailConcurrency}
+                onChange={(e) => updateFormData({ massEmailConcurrency: parseInt(e.target.value) })}
+                className="w-full px-4 py-3 bg-white border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 outline-none"
+              >
+                <option value={50}>50 emails at once</option>
+                <option value={100}>100 emails at once</option>
+                <option value={250}>250 emails at once</option>
+                <option value={500}>500 emails at once</option>
+                <option value={1000}>1000 emails at once</option>
+              </select>
+              <p className="text-xs text-blue-600 mt-1">
+                Higher concurrency = faster campaign delivery
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Daily Send Limit - Only show for distributed sending */}
+        {!formData.isMassEmail && (
+          <div>
+            <label className="block text-base font-semibold text-gray-800 mb-4">
+              Daily Send Limit
+            </label>
+            <input
+              type="number"
+              value={formData.dailySendLimit}
+              onChange={(e) => updateFormData({ dailySendLimit: parseInt(e.target.value) || 50 })}
+              min="1"
+              max="10000"
+              placeholder="50"
+              className="w-full px-6 py-5 bg-gray-50/50 border-0 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:shadow-md outline-none text-lg text-black placeholder-gray-500"
+            />
+            <p className="text-sm text-gray-600 mt-2">
+              Maximum emails to send per day for distributed campaigns
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -643,49 +767,104 @@ function ReviewStep({ formData }: { formData: FormData }) {
       </div>
       
       <div className="max-w-4xl mx-auto space-y-8">
-        {/* Campaign Summary */}
-        <div className="bg-gray-50 rounded-xl p-8">
-          <h3 className="text-xl font-semibold text-black mb-6">Campaign Summary</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-base text-gray-600">Campaign Name:</span>
-              <span className="font-semibold text-lg">{formData.name}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-base text-gray-600">From:</span>
-              <span className="font-semibold">{formData.fromName} &lt;{formData.fromEmail}&gt;</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-base text-gray-600">Recipients:</span>
-              <span className="font-semibold text-blue-600">{formData.campaignLeads.length} leads</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-base text-gray-600">Subject:</span>
-              <span className="font-semibold">{formData.subject}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Preview first few leads */}
-        {formData.campaignLeads.length > 0 && (
-          <div className="bg-blue-50 rounded-xl p-8">
-            <h3 className="text-xl font-semibold text-black mb-6">Recipients Preview</h3>
-            <div className="space-y-3">
-              {formData.campaignLeads.slice(0, 5).map((lead, index) => (
-                <div key={index} className="text-base text-gray-700 flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>{lead.firstName} {lead.lastName} - {lead.email}</span>
+        {/* Minimalistic Campaign Summary */}
+        <div className="border border-gray-200 rounded-lg p-6">
+          <h3 className="text-2xl font-semibold text-gray-900 mb-8">Campaign Summary</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <div>
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Campaign Name</span>
+                <p className="font-semibold text-xl text-gray-900 mt-1">{formData.name}</p>
+              </div>
+              
+              <div>
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">From</span>
+                <p className="font-semibold text-lg text-gray-900 mt-1">{formData.fromName}</p>
+                <p className="text-blue-600 font-medium">{formData.fromEmail}</p>
+              </div>
+              
+              <div>
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Email Type</span>
+                <div className="flex items-center mt-1">
+                  {formData.isMassEmail ? (
+                    <>
+                      <RocketLaunchIcon className="h-5 w-5 text-blue-600 mr-2" />
+                      <span className="font-semibold text-lg text-blue-600">Mass Email</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="h-5 w-5 text-green-600 mr-2" />
+                      <span className="font-semibold text-lg text-green-600">Distributed Sending</span>
+                    </>
+                  )}
                 </div>
-              ))}
-              {formData.campaignLeads.length > 5 && (
-                <div className="text-base text-gray-600 flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  <span>+ {formData.campaignLeads.length - 5} more recipients</span>
+                {formData.isMassEmail && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    {formData.massEmailConcurrency} emails at once
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            {/* Right Column */}
+            <div className="space-y-6">
+              <div>
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Recipients</span>
+                <div className="flex items-center mt-1">
+                  <span className="text-2xl font-bold text-blue-600">{formData.campaignLeads.length}</span>
+                  <span className="text-gray-600 ml-2">
+                    {formData.campaignLeads.length === 1 ? 'lead ready' : 'leads ready'} to receive your message
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Subject Line</span>
+                <p className="font-semibold text-lg text-gray-900 mt-1">
+                  "{formData.subject}"
+                </p>
+              </div>
+              
+              {!formData.isMassEmail && (
+                <div>
+                  <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Daily Limit</span>
+                  <p className="font-semibold text-lg text-gray-900 mt-1">
+                    {formData.dailySendLimit} emails/day
+                  </p>
+                  {formData.campaignLeads.length > formData.dailySendLimit && (
+                    <div className="flex items-center mt-1">
+                      <InformationCircleIcon className="h-4 w-4 text-amber-600 mr-1" />
+                      <p className="text-sm text-amber-600">
+                        Campaign will take ~{Math.ceil(formData.campaignLeads.length / formData.dailySendLimit)} days
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
-        )}
+          
+          {/* Email Preview */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <h4 className="text-lg font-semibold text-gray-900 mb-4">Email Preview</h4>
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>To:</strong> {formData.campaignLeads.length > 0 ? formData.campaignLeads[0].email : 'your-recipients@email.com'}
+              </div>
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>From:</strong> {formData.fromName} &lt;{formData.fromEmail}&gt;
+              </div>
+              <div className="text-sm text-gray-600 mb-4">
+                <strong>Subject:</strong> {formData.subject}
+              </div>
+              <div className="bg-white rounded border p-4 text-sm text-gray-700 max-h-32 overflow-y-auto">
+                {formData.bodyText || 'Your email content will appear here...'}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

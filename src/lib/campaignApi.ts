@@ -148,6 +148,8 @@ export interface CreateCampaignData {
   send_immediately?: boolean;
   timezone?: string;
   daily_send_limit?: number;
+  is_mass_email?: boolean;
+  mass_email_concurrency?: number;
 }
 
 export interface UpdateCampaignData {
