@@ -9,6 +9,7 @@ import {
   ChartBarIcon,
   Cog6ToothIcon,
   ArrowLeftOnRectangleIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -16,6 +17,7 @@ import {
   UserGroupIcon as UserGroupIconSolid,
   ChartBarIcon as ChartBarIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
+  MagnifyingGlassIcon as MagnifyingGlassIconSolid,
 } from '@heroicons/react/24/solid';
 
 interface ModernSidebarProps {
@@ -55,6 +57,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       icon: UserGroupIcon, 
       iconSolid: UserGroupIconSolid,
       current: activeTab === 'leads' 
+    },
+    { 
+      name: 'Search', 
+      href: 'search', 
+      icon: MagnifyingGlassIcon, 
+      iconSolid: MagnifyingGlassIconSolid,
+      current: activeTab === 'search' 
     },
     { 
       name: 'Analytics', 

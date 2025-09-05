@@ -10,6 +10,8 @@ import ModernTopbar from '@/components/ui/ModernTopbar';
 import { api } from '@/lib/apiClient';
 import { campaignApi, Campaign, campaignUtils } from '@/lib/campaignApi';
 import CampaignCreationForm from '@/components/campaigns/CampaignCreationForm';
+import { useGlobalEmailStats } from '@/hooks/useGlobalEmailStats';
+import DashboardProspectSearch from '@/components/leads/DashboardProspectSearch';
 
 import {
   HomeIcon,
@@ -54,7 +56,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
-    if (tab && ['dashboard', 'campaigns', 'leads', 'analytics', 'settings'].includes(tab)) {
+    if (tab && ['dashboard', 'campaigns', 'leads', 'search', 'analytics', 'settings'].includes(tab)) {
       setActiveTab(tab);
     }
   }, []);
@@ -144,6 +146,7 @@ export default function DashboardPage() {
               {activeTab === 'dashboard' && <DashboardContent user={user} />}
               {activeTab === 'campaigns' && <CampaignsContent />}
               {activeTab === 'leads' && <LeadsContent />}
+              {activeTab === 'search' && <SearchContent />}
               {activeTab === 'analytics' && <AnalyticsContent />}
               {activeTab === 'settings' && <SettingsContent />}
             </div>
@@ -154,32 +157,9 @@ export default function DashboardPage() {
   );
 }
 
-// Dashboard Content Component
+// Dashboard Content Component  
 function DashboardContent({ user }: { user: any }) {
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [loadingAnalytics, setLoadingAnalytics] = useState(true);
-
-  useEffect(() => {
-    fetchDashboardAnalytics();
-  }, []);
-
-  const fetchDashboardAnalytics = async () => {
-    try {
-      setLoadingAnalytics(true);
-      const { campaignApi } = await import('@/lib/campaignApi');
-      const response = await campaignApi.getDashboardAnalytics();
-      
-      if (response.success && response.data) {
-        setAnalytics(response.data);
-      } else {
-        console.error('Failed to fetch analytics:', response.message);
-      }
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-    } finally {
-      setLoadingAnalytics(false);
-    }
-  };
+  const { stats, isLoading: loadingAnalytics, error, refetch } = useGlobalEmailStats();
 
   const formatNumber = (num: number) => {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
@@ -221,7 +201,7 @@ function DashboardContent({ user }: { user: any }) {
                   {loadingAnalytics ? (
                     <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
                   ) : (
-                    formatNumber(analytics?.overview?.emails_sent || 0)
+                    formatNumber(stats?.emailsSentTotal || 0)
                   )}
                 </dd>
               </dl>
@@ -243,7 +223,7 @@ function DashboardContent({ user }: { user: any }) {
                   {loadingAnalytics ? (
                     <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
                   ) : (
-                    `${analytics?.overview?.open_rate || 0}%`
+                    `${stats?.openRateAverage || 0}%`
                   )}
                 </dd>
               </dl>
@@ -265,7 +245,7 @@ function DashboardContent({ user }: { user: any }) {
                   {loadingAnalytics ? (
                     <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
                   ) : (
-                    `${analytics?.overview?.reply_rate || 0}%`
+                    `${stats?.clickRateAverage || 0}%`
                   )}
                 </dd>
               </dl>
@@ -289,7 +269,7 @@ function DashboardContent({ user }: { user: any }) {
                   {loadingAnalytics ? (
                     <div className="animate-pulse bg-gray-200 h-6 w-16 rounded"></div>
                   ) : (
-                    formatCurrency(analytics?.overview?.opportunities || 0)
+                    formatCurrency(stats?.totalLeads || 0)
                   )}
                 </dd>
               </dl>
@@ -316,9 +296,9 @@ function DashboardContent({ user }: { user: any }) {
                 </div>
               ))}
             </div>
-          ) : analytics?.recent_activity?.length > 0 ? (
+          ) : stats?.campaigns?.length > 0 ? (
             <div className="space-y-4">
-              {analytics.recent_activity.slice(0, 5).map((activity: any, index: number) => (
+              {stats.campaigns.slice(0, 5).map((campaign: any, index: number) => (
                 <div key={index} className="flex items-start space-x-3">
                   <div className="flex-shrink-0">
                     <span className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -327,16 +307,13 @@ function DashboardContent({ user }: { user: any }) {
                   </div>
                   <div className="flex-1">
                     <p className="text-sm text-gray-900">
-                      <span className="font-medium">{activity.emails_sent}</span> emails sent
-                      {activity.emails_opened > 0 && (
-                        <>, <span className="font-medium">{activity.emails_opened}</span> opened</>
-                      )}
-                      {activity.emails_replied > 0 && (
-                        <>, <span className="font-medium text-green-600">{activity.emails_replied}</span> replied</>
-                      )}
+                      Campaign: <span className="font-medium">{campaign.name}</span>
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {new Date(activity.date).toLocaleDateString('en-US', {
+                      {campaign.emailsSent} sent • {campaign.openRate}% opened • Status: {campaign.status}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(campaign.lastActivity).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
@@ -357,27 +334,31 @@ function DashboardContent({ user }: { user: any }) {
       </div>
 
       {/* Top Campaigns */}
-      {analytics?.top_campaigns?.length > 0 && (
+      {stats?.campaigns?.length > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 mt-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Top Performing Campaigns</h3>
+          <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 className="text-lg font-medium text-gray-900">Recent Campaigns</h3>
+            <div className="flex items-center text-xs text-gray-500">
+              <div className="w-2 h-2 bg-green-400 rounded-full mr-1"></div>
+              Live updates every {stats?.isEmailSending ? '3' : '30'} seconds
+            </div>
           </div>
           <div className="p-6">
             <div className="space-y-4">
-              {analytics.top_campaigns.slice(0, 3).map((campaign: any) => (
+              {stats.campaigns.slice(0, 3).map((campaign: any) => (
                 <div key={campaign.id} className="flex items-center justify-between">
                   <div className="flex-1">
                     <h4 className="text-sm font-medium text-gray-900">{campaign.name}</h4>
                     <p className="text-xs text-gray-500">
-                      {campaign.emails_sent} sent • {campaign.open_rate}% open rate
+                      {campaign.emailsSent} sent • {campaign.openRate}% open rate • {campaign.totalLeads} leads
                     </p>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-medium text-gray-900">
-                      {campaign.emails_replied} replies
+                      {campaign.clickRate}% clicks
                     </div>
                     <div className="text-xs text-gray-500">
-                      {((campaign.emails_replied / (campaign.emails_sent || 1)) * 100).toFixed(1)}% reply rate
+                      Status: {campaign.status}
                     </div>
                   </div>
                 </div>
@@ -897,6 +878,83 @@ function SettingsContent() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Search Content Component - ContactOut Integration
+function SearchContent() {
+  return (
+    <div>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Find Prospects</h1>
+        <p className="mt-1 text-sm text-gray-500">
+          Search ContactOut's database for qualified leads and grow your contact list.
+        </p>
+      </div>
+
+      {/* Credits Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <EnvelopeIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Email Credits
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">200</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-blue-600 font-bold text-sm">📞</span>
+                </div>
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Phone Credits
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">100</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <MagnifyingGlassIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    Search Credits
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">2000</dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Prospect Search Interface */}
+      <DashboardProspectSearch />
     </div>
   );
 }
