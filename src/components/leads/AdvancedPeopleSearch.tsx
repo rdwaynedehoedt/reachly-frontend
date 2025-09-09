@@ -50,9 +50,7 @@ interface SearchFilters {
   // Page
   page?: number;
   
-  // Enhancement options
-  enable_quality_verification?: boolean;
-  sort_by_quality?: boolean;
+  // No validation or quality verification needed
 }
 
 interface SearchResult {
@@ -113,8 +111,7 @@ export default function AdvancedPeopleSearch() {
     company_filter: 'current' as const,
     current_company_only: true,
     reveal_info: false,
-    enable_quality_verification: true,
-    sort_by_quality: true
+    // No validation or quality checks - just show all data
     // Note: match_experience removed from defaults to avoid conflicts
     // It can be set manually but will override other parameters
   });
@@ -227,9 +224,7 @@ export default function AdvancedPeopleSearch() {
       current_titles_only: true,
       company_filter: 'current' as const,
       current_company_only: true,
-      reveal_info: false,
-      enable_quality_verification: true,
-      sort_by_quality: true
+      reveal_info: false
       // match_experience removed from reset to avoid conflicts
     });
     setJobTitleInput('');
@@ -254,7 +249,7 @@ export default function AdvancedPeopleSearch() {
         current_titles_only: true,
         company_filter: 'current' as const,
         data_types: ['work_email'],
-        enable_quality_verification: true,
+        // No validation needed,
         sort_by_quality: true
       },
       marketing_professionals: {
@@ -266,7 +261,7 @@ export default function AdvancedPeopleSearch() {
         company_size: ['201_500', '501_1000', '1001_5000'],
         current_titles_only: true,
         company_filter: 'current' as const,
-        enable_quality_verification: true
+        // No validation needed
       },
       startup_founders: {
         job_title: ['Founder', 'CEO', 'Co-Founder', 'President'],
@@ -278,7 +273,7 @@ export default function AdvancedPeopleSearch() {
         current_titles_only: true,
         company_filter: 'current' as const,
         data_types: ['work_email', 'personal_email'],
-        enable_quality_verification: true,
+        // No validation needed,
         sort_by_quality: true
       },
       sales_leaders: {
@@ -291,7 +286,7 @@ export default function AdvancedPeopleSearch() {
         current_titles_only: true,
         company_filter: 'current' as const,
         data_types: ['work_email', 'phone'],
-        enable_quality_verification: true,
+        // No validation needed,
         sort_by_quality: true
       },
       ai_ml_engineers: {
@@ -304,7 +299,7 @@ export default function AdvancedPeopleSearch() {
         education: ['Stanford', 'MIT', 'Carnegie Mellon', 'Berkeley'],
         current_titles_only: true,
         company_filter: 'current' as const,
-        enable_quality_verification: true
+        // No validation needed
       },
       healthcare_executives: {
         job_title: ['CEO', 'COO', 'VP Operations', 'Medical Director'],
@@ -316,7 +311,7 @@ export default function AdvancedPeopleSearch() {
         current_titles_only: true,
         company_filter: 'current' as const,
         data_types: ['work_email'],
-        enable_quality_verification: true,
+        // No validation needed,
         sort_by_quality: true
       },
       fintech_professionals: {
@@ -329,7 +324,7 @@ export default function AdvancedPeopleSearch() {
         years_of_experience: ['3_5', '6_10'],
         current_titles_only: true,
         company_filter: 'current' as const,
-        enable_quality_verification: true
+        // No validation needed
       },
       remote_developers: {
         job_title: ['Software Engineer', 'Senior Developer', 'Full Stack Developer', 'Backend Engineer'],
@@ -341,7 +336,7 @@ export default function AdvancedPeopleSearch() {
         current_titles_only: true,
         company_filter: 'current' as const,
         data_types: ['work_email', 'personal_email'],
-        enable_quality_verification: true
+        // No validation needed
       }
     };
 
@@ -695,25 +690,9 @@ export default function AdvancedPeopleSearch() {
                 {expandedSections.advanced && (
                   <div className="space-y-4 pl-4">
                     <div className="space-y-2">
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={filters.enable_quality_verification || false}
-                          onChange={(e) => setFilters(prev => ({ ...prev, enable_quality_verification: e.target.checked }))}
-                          className="mr-2"
-                        />
-                        <span className="text-sm">Enable Quality Verification (FREE)</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={filters.sort_by_quality || false}
-                          onChange={(e) => setFilters(prev => ({ ...prev, sort_by_quality: e.target.checked }))}
-                          className="mr-2"
-                          disabled={!filters.enable_quality_verification}
-                        />
-                        <span className="text-sm">Sort by Quality Score</span>
-                      </label>
+                      <div className="text-sm text-gray-600">
+                        All lead generation data is now displayed without validation checks for faster results.
+                      </div>
                       <label className="flex items-center">
                         <input
                           type="checkbox"
@@ -911,17 +890,7 @@ export default function AdvancedPeopleSearch() {
                               )}
                             </div>
                             
-                            {profile.quality_score && (
-                              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                profile.quality_score.confidence_level === 'high' ? 'bg-green-100 text-green-800' :
-                                profile.quality_score.confidence_level === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                                'bg-red-100 text-red-800'
-                              }`}>
-                                {profile.quality_score.confidence_level === 'high' ? '🟢' :
-                                 profile.quality_score.confidence_level === 'medium' ? '🟡' : '🔴'} 
-                                {profile.quality_score.overall_score}/100
-                              </div>
-                            )}
+                            {/* Quality scores removed for faster performance */}
                           </div>
 
                           <div className="mt-3 space-y-2">
