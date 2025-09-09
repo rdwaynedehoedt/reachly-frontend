@@ -10,6 +10,7 @@ import {
   Cog6ToothIcon,
   ArrowLeftOnRectangleIcon,
   MagnifyingGlassIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
 import {
   HomeIcon as HomeIconSolid,
@@ -18,6 +19,7 @@ import {
   ChartBarIcon as ChartBarIconSolid,
   Cog6ToothIcon as Cog6ToothIconSolid,
   MagnifyingGlassIcon as MagnifyingGlassIconSolid,
+  BuildingOfficeIcon as BuildingOfficeIconSolid,
 } from '@heroicons/react/24/solid';
 
 interface ModernSidebarProps {
@@ -64,6 +66,13 @@ const ModernSidebar: React.FC<ModernSidebarProps> = ({
       icon: MagnifyingGlassIcon, 
       iconSolid: MagnifyingGlassIconSolid,
       current: activeTab === 'search' 
+    },
+    { 
+      name: 'Company Intel', 
+      href: 'company', 
+      icon: BuildingOfficeIcon, 
+      iconSolid: BuildingOfficeIconSolid,
+      current: activeTab === 'company' 
     },
     { 
       name: 'Analytics', 

@@ -4,7 +4,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import ProspectSearchInterface from '@/components/leads/ProspectSearchInterface';
+import CompanyEmployeeSearch from '@/components/leads/CompanyEmployeeSearch';
 
 export default function ProspectSearchPage() {
   const { user, loading, isAuthenticated } = useAuth();
@@ -51,7 +51,7 @@ export default function ProspectSearchPage() {
       </div>
 
       {/* Main Content */}
-      <ProspectSearchInterface />
+      <CompanyEmployeeSearch />
     </div>
   );
 }

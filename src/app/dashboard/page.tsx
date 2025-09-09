@@ -11,7 +11,8 @@ import { api } from '@/lib/apiClient';
 import { campaignApi, Campaign, campaignUtils } from '@/lib/campaignApi';
 import CampaignCreationForm from '@/components/campaigns/CampaignCreationForm';
 import { useGlobalEmailStats } from '@/hooks/useGlobalEmailStats';
-import DashboardProspectSearch from '@/components/leads/DashboardProspectSearch';
+import CompanyEmployeeSearch from '@/components/leads/CompanyEmployeeSearch';
+import AdvancedPeopleSearch from '@/components/leads/AdvancedPeopleSearch';
 
 import {
   HomeIcon,
@@ -882,79 +883,64 @@ function SettingsContent() {
   );
 }
 
-// Search Content Component - ContactOut Integration
+// Search Content Component - ContactOut Integration with Multiple Search Types
 function SearchContent() {
+  const [activeSearchTab, setActiveSearchTab] = useState('company');
+
+  const searchTabs = [
+    { 
+      id: 'company', 
+      name: 'Company Employees', 
+      icon: UserGroupIcon,
+      description: 'Find employees at specific companies'
+    },
+    { 
+      id: 'advanced', 
+      name: 'Advanced People Search', 
+      icon: FunnelIcon,
+      description: 'Use 15+ filters to find exact prospects'
+    }
+  ];
+
   return (
-    <div>
-      {/* Header */}
+    <div className="h-full">
+      {/* Search Type Tabs */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Find Prospects</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Search ContactOut's database for qualified leads and grow your contact list.
-        </p>
-      </div>
-
-      {/* Credits Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <EnvelopeIcon className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Email Credits
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">200</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="h-6 w-6 bg-blue-100 rounded-full flex items-center justify-center">
-                  <span className="text-blue-600 font-bold text-sm">📞</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Phone Credits
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">100</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white overflow-hidden shadow-sm rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <MagnifyingGlassIcon className="h-6 w-6 text-purple-600" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Search Credits
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">2000</dd>
-                </dl>
-              </div>
-            </div>
-          </div>
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8">
+            {searchTabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveSearchTab(tab.id)}
+                  className={`
+                    group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
+                    ${activeSearchTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  <Icon className="w-5 h-5 mr-2" />
+                  <div className="text-left">
+                    <div>{tab.name}</div>
+                    <div className="text-xs text-gray-400 font-normal">
+                      {tab.description}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </nav>
         </div>
       </div>
 
-      {/* Prospect Search Interface */}
-      <DashboardProspectSearch />
+      {/* Search Components */}
+      <div className="h-full">
+        {activeSearchTab === 'company' && <CompanyEmployeeSearch />}
+        {activeSearchTab === 'advanced' && <AdvancedPeopleSearch />}
+      </div>
     </div>
   );
 }

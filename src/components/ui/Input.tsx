@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 // Simple utility function to combine class names
 const cn = (...classes: (string | undefined | boolean | null)[]) => {
@@ -18,7 +18,8 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, helperText, error, leftIcon, rightIcon, fullWidth = false, responsive = false, size = 'md', ...props }, ref) => {
-    const inputId = props.id || `input-${Math.random().toString(36).substring(2, 9)}`;
+    const generatedId = useId();
+    const inputId = props.id || `input-${generatedId}`;
     
     // Size-based styling
     const sizeClasses = {
