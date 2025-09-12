@@ -137,6 +137,69 @@ export default function AdvancedPeopleSearch() {
   const [skillsInput, setSkillsInput] = useState('');
   const [educationInput, setEducationInput] = useState('');
 
+  // Sidebar state for dynamic positioning
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
+
+  // Listen for sidebar hover/expansion and implement specific scrolling
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const sidebar = document.getElementById('modern-sidebar');
+      if (sidebar) {
+        const sidebarRect = sidebar.getBoundingClientRect();
+        const isHoveringSidebar = e.clientX <= sidebarRect.right + 10;
+        setSidebarExpanded(isHoveringSidebar || sidebarRect.width > 100);
+      }
+    };
+
+    // Handle mouse movement for section-specific scrolling
+    const handleMouseMoveForScrolling = (e: MouseEvent) => {
+      const filtersPanel = document.getElementById('search-filters-scroll');
+      const resultsPanel = document.getElementById('search-results-scroll');
+      
+      if (filtersPanel && resultsPanel) {
+        const filtersPanelParent = filtersPanel.parentElement;
+        const resultsPanelParent = resultsPanel.parentElement;
+        
+        if (filtersPanelParent && resultsPanelParent) {
+          const filtersPanelRect = filtersPanelParent.getBoundingClientRect();
+          const resultsPanelRect = resultsPanelParent.getBoundingClientRect();
+          
+          const mouseX = e.clientX;
+          const mouseY = e.clientY;
+          
+          // Check if mouse is over filters panel
+          const isOverFilters = mouseX >= filtersPanelRect.left && 
+                               mouseX <= filtersPanelRect.right && 
+                               mouseY >= filtersPanelRect.top && 
+                               mouseY <= filtersPanelRect.bottom;
+          
+          // Check if mouse is over results panel
+          const isOverResults = mouseX >= resultsPanelRect.left && 
+                               mouseX <= resultsPanelRect.right && 
+                               mouseY >= resultsPanelRect.top && 
+                               mouseY <= resultsPanelRect.bottom;
+          
+          // Set data attributes for CSS to handle scrolling
+          if (isOverFilters) {
+            document.body.setAttribute('data-scroll-section', 'filters');
+          } else if (isOverResults) {
+            document.body.setAttribute('data-scroll-section', 'results');
+          } else {
+            document.body.removeAttribute('data-scroll-section');
+          }
+        }
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mousemove', handleMouseMoveForScrolling);
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mousemove', handleMouseMoveForScrolling);
+    };
+  }, []);
+
   const toggleSection = (section: string) => {
     setExpandedSections(prev => ({
       ...prev,
@@ -359,23 +422,27 @@ export default function AdvancedPeopleSearch() {
     const values = filters[field] as string[] || [];
     
     return (
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
         <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={placeholder}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addToArrayField(field, input);
-              }
-            }}
-          />
+          <div className="flex-1">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={placeholder}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  addToArrayField(field, input);
+                }
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
           <Button
             type="button"
-            variant="outline"
+            variant="primary"
             size="sm"
             onClick={() => addToArrayField(field, input)}
             disabled={!input.trim()}
@@ -384,16 +451,16 @@ export default function AdvancedPeopleSearch() {
           </Button>
         </div>
         {values.length > 0 && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3 mt-2">
             {values.map((value, index) => (
               <span
                 key={index}
-                className="inline-flex items-center px-3 py-1 bg-slate-100 text-slate-700 text-sm rounded-md border border-slate-200 hover:bg-slate-200 transition-colors duration-150"
+                className="inline-flex items-center text-xs text-gray-600 hover:text-blue-600 transition-colors duration-150"
               >
                 {value}
                 <button
                   onClick={() => removeFromArrayField(field, index)}
-                  className="ml-2 text-slate-500 hover:text-slate-700 transition-colors duration-150"
+                  className="ml-2 text-gray-400 hover:text-blue-500 transition-colors duration-150"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -408,131 +475,108 @@ export default function AdvancedPeopleSearch() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8 bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <div className="flex items-center space-x-4">
-          <div className="flex-shrink-0">
-            <div className="p-3 bg-slate-100 rounded-lg">
-              <svg className="w-6 h-6 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-semibold text-gray-900 mb-1">
-              Advanced People Search
-            </h1>
-            <div className="flex items-center text-sm text-gray-600">
-              <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-              Use ContactOut's powerful filtering system with 15+ professional filters
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Filters Panel */}
-        <div className="lg:col-span-1">
-          <Card className="sticky top-6">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
-                <h2 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-                  </svg>
-                  Search Filters
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 px-3 py-2 rounded-md transition-colors duration-200"
-                >
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Clear All
-                </Button>
+    <div className="flex h-screen overflow-hidden">
+      {/* Search Filters Panel - Fixed position aligned with sidebar */}
+      <div 
+        className="fixed bg-white border-r border-gray-200 transition-all duration-200 ease-out z-30"
+        style={{ 
+          top: '56px', // Below top bar
+          left: sidebarExpanded ? '240px' : '64px', // Right of sidebar
+          width: '320px',
+          height: 'calc(100vh - 56px)' // Full height minus top bar
+        }}
+      >
+        <div className="h-full overflow-y-auto" id="search-filters-scroll">
+          <div className="p-4">
+            {/* Clean Header */}
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Search Filters</h2>
+                <p className="text-xs text-gray-500">Use 15+ filters to find exact prospects</p>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAllFilters}
+                className="text-gray-600 hover:text-gray-900"
+              >
+                Reset
+              </Button>
+            </div>
 
 
               {/* Basic Information */}
               <div className="space-y-4">
                 <button
                   onClick={() => toggleSection('basic')}
-                  className="w-full flex items-center justify-between py-3 px-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  className="w-full text-left py-2 group transition-all duration-200"
                 >
-                  <h3 className="font-medium text-gray-900 flex items-center">
-                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm border border-gray-200">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      </svg>
-                    </div>
-                    Basic Information
-                  </h3>
-                  {expandedSections.basic ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                  )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Basic Information</h3>
+                    <svg 
+                      className={`w-4 h-4 transition-all duration-200 group-hover:text-blue-500 ${
+                        expandedSections.basic ? 'rotate-180 text-blue-500' : 'text-gray-400'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
 
                 {expandedSections.basic && (
-                  <div className="space-y-4 pl-4">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Name</label>
-                      <Input
-                        value={filters.name || ''}
-                        onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="John Smith"
-                      />
-                    </div>
+                  <div className="pl-4 space-y-4">
+                    <Input
+                      label="Name"
+                      value={filters.name || ''}
+                      onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="John Smith"
+                      size="md"
+                    />
 
                     {renderArrayField('job_title', 'Job Titles', jobTitleInput, setJobTitleInput, 'CEO, Software Engineer, etc.')}
 
-                    <div>
-                      <label className="text-sm font-medium text-gray-700">Keyword</label>
-                      <Input
-                        value={filters.keyword || ''}
-                        onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
-                        placeholder="machine learning, startup, etc."
-                      />
-                    </div>
+                    <Input
+                      label="Keywords"
+                      value={filters.keyword || ''}
+                      onChange={(e) => setFilters(prev => ({ ...prev, keyword: e.target.value }))}
+                      placeholder="machine learning, startup, etc."
+                      size="md"
+                    />
                   </div>
                 )}
 
                 {/* Company & Experience */}
                 <button
                   onClick={() => toggleSection('company')}
-                  className="w-full flex items-center justify-between py-3 px-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  className="w-full text-left py-2 group transition-all duration-200"
                 >
-                  <h3 className="font-medium text-gray-900 flex items-center">
-                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm border border-gray-200">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                      </svg>
-                    </div>
-                    Company & Experience
-                  </h3>
-                  {expandedSections.company ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                  )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Company & Experience</h3>
+                    <svg 
+                      className={`w-4 h-4 transition-all duration-200 group-hover:text-blue-500 ${
+                        expandedSections.company ? 'rotate-180 text-blue-500' : 'text-gray-400'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
 
                 {expandedSections.company && (
-                  <div className="space-y-4 pl-4">
+                  <div className="pl-4 space-y-4">
                     {renderArrayField('company', 'Companies', companyInput, setCompanyInput, 'Microsoft, Google, Apple')}
                     {renderArrayField('industry', 'Industries', industryInput, setIndustryInput, 'Computer Software, Healthcare')}
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Company Size</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Company Size</label>
                       <select
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         onChange={(e) => {
                           if (e.target.value) {
                             setFilters(prev => ({
@@ -550,18 +594,20 @@ export default function AdvancedPeopleSearch() {
                         ))}
                       </select>
                       {filters.company_size && filters.company_size.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-3 mt-2">
                           {filters.company_size.map((size, index) => (
                             <span
                               key={index}
-                              className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full"
+                              className="inline-flex items-center text-xs text-gray-600 hover:text-blue-600 transition-colors duration-150"
                             >
                               {companySizeOptions.find(opt => opt.value === size)?.label}
                               <button
                                 onClick={() => removeFromArrayField('company_size', index)}
-                                className="ml-1 text-green-600 hover:text-green-800"
+                                className="ml-2 text-gray-400 hover:text-blue-500 transition-colors duration-150"
                               >
-                                <XMarkIcon className="w-3 h-3" />
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                               </button>
                             </span>
                           ))}
@@ -570,9 +616,9 @@ export default function AdvancedPeopleSearch() {
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Years of Experience</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience</label>
                       <select
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         onChange={(e) => {
                           if (e.target.value) {
                             setFilters(prev => ({
@@ -590,18 +636,20 @@ export default function AdvancedPeopleSearch() {
                         ))}
                       </select>
                       {filters.years_of_experience && filters.years_of_experience.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-3 mt-2">
                           {filters.years_of_experience.map((exp, index) => (
                             <span
                               key={index}
-                              className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 text-sm rounded-full"
+                              className="inline-flex items-center text-xs text-gray-600 hover:text-blue-600 transition-colors duration-150"
                             >
                               {experienceOptions.find(opt => opt.value === exp)?.label}
                               <button
                                 onClick={() => removeFromArrayField('years_of_experience', index)}
-                                className="ml-1 text-purple-600 hover:text-purple-800"
+                                className="ml-2 text-gray-400 hover:text-blue-500 transition-colors duration-150"
                               >
-                                <XMarkIcon className="w-3 h-3" />
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
                               </button>
                             </span>
                           ))}
@@ -614,26 +662,25 @@ export default function AdvancedPeopleSearch() {
                 {/* Location */}
                 <button
                   onClick={() => toggleSection('location')}
-                  className="w-full flex items-center justify-between py-3 px-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  className="w-full text-left py-2 group transition-all duration-200"
                 >
-                  <h3 className="font-medium text-gray-900 flex items-center">
-                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm border border-gray-200">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    Location
-                  </h3>
-                  {expandedSections.location ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                  )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Location</h3>
+                    <svg 
+                      className={`w-4 h-4 transition-all duration-200 group-hover:text-blue-500 ${
+                        expandedSections.location ? 'rotate-180 text-blue-500' : 'text-gray-400'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
 
                 {expandedSections.location && (
-                  <div className="space-y-4 pl-4">
+                  <div className="pl-4 space-y-4">
                     {renderArrayField('location', 'Locations', locationInput, setLocationInput, 'San Francisco, New York, Remote')}
                   </div>
                 )}
@@ -641,26 +688,25 @@ export default function AdvancedPeopleSearch() {
                 {/* Education & Skills */}
                 <button
                   onClick={() => toggleSection('education')}
-                  className="w-full flex items-center justify-between py-3 px-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  className="w-full text-left py-2 group transition-all duration-200"
                 >
-                  <h3 className="font-medium text-gray-900 flex items-center">
-                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm border border-gray-200">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l9-5-9-5-9 5 9 5z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                      </svg>
-                    </div>
-                    Education & Skills
-                  </h3>
-                  {expandedSections.education ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                  )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Education & Skills</h3>
+                    <svg 
+                      className={`w-4 h-4 transition-all duration-200 group-hover:text-blue-500 ${
+                        expandedSections.education ? 'rotate-180 text-blue-500' : 'text-gray-400'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
 
                 {expandedSections.education && (
-                  <div className="space-y-4 pl-4">
+                  <div className="pl-4 space-y-4">
                     {renderArrayField('education', 'Education', educationInput, setEducationInput, 'Harvard, Stanford, MBA')}
                     {renderArrayField('skills', 'Skills', skillsInput, setSkillsInput, 'JavaScript, Marketing, Leadership')}
                   </div>
@@ -669,44 +715,40 @@ export default function AdvancedPeopleSearch() {
                 {/* Advanced Options */}
                 <button
                   onClick={() => toggleSection('advanced')}
-                  className="w-full flex items-center justify-between py-3 px-3 text-left bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                  className="w-full text-left py-2 group transition-all duration-200"
                 >
-                  <h3 className="font-medium text-gray-900 flex items-center">
-                    <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center mr-3 shadow-sm border border-gray-200">
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    </div>
-                    Advanced Options
-                  </h3>
-                  {expandedSections.advanced ? (
-                    <ChevronUpIcon className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronDownIcon className="w-4 h-4 text-gray-500" />
-                  )}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-medium text-gray-700 group-hover:text-blue-600">Advanced Options</h3>
+                    <svg 
+                      className={`w-4 h-4 transition-all duration-200 group-hover:text-blue-500 ${
+                        expandedSections.advanced ? 'rotate-180 text-blue-500' : 'text-gray-400'
+                      }`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </button>
 
                 {expandedSections.advanced && (
-                  <div className="space-y-4 pl-4">
-                    <div className="space-y-2">
-                      <div className="text-sm text-gray-600">
-                        All lead generation data is now displayed without validation checks for faster results.
-                      </div>
+                  <div className="pl-4 space-y-4">
+                    <div className="space-y-3">
                       <label className="flex items-center">
                         <input
                           type="checkbox"
                           checked={filters.current_titles_only || false}
                           onChange={(e) => setFilters(prev => ({ ...prev, current_titles_only: e.target.checked }))}
-                          className="mr-2"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
                         />
-                        <span className="text-sm">Current Job Titles Only</span>
+                        <span className="text-sm font-medium text-gray-700">Current Job Titles Only</span>
                       </label>
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Required Contact Data</label>
-                      <div className="space-y-2 mt-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-3">Required Contact Data</label>
+                      <div className="space-y-2">
                         {dataTypeOptions.map(option => (
                           <label key={option.value} className="flex items-center">
                             <input
@@ -725,18 +767,18 @@ export default function AdvancedPeopleSearch() {
                                   }));
                                 }
                               }}
-                              className="mr-2"
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-3"
                             />
-                            <span className="text-sm">{option.label}</span>
+                            <span className="text-sm text-gray-700">{option.label}</span>
                           </label>
                         ))}
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Experience Matching</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Experience Matching</label>
                       <select
-                        className="w-full mt-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         value={filters.match_experience || ''}
                         onChange={(e) => {
                           if (e.target.value) {
@@ -754,8 +796,10 @@ export default function AdvancedPeopleSearch() {
                         <option value="both">Current or past experience</option>
                       </select>
                       {filters.match_experience && (
-                        <div className="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-700">
-                          ⚠️ Note: Using experience matching will override company filter and current titles settings.
+                        <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+                          <p className="text-xs text-amber-700">
+                            ⚠️ Experience matching will override company filter and current titles settings.
+                          </p>
                         </div>
                       )}
                     </div>
@@ -763,190 +807,191 @@ export default function AdvancedPeopleSearch() {
                 )}
               </div>
 
-              {/* Search Button */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <Button
-                  onClick={handleSearch}
-                  disabled={isLoading}
-                  className="w-full bg-slate-600 hover:bg-slate-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5 py-3"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Searching professionals...
-                    </>
-                  ) : (
-                    <div className="flex items-center justify-center">
-                      <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      Search People
-                      <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5-5 5" />
-                      </svg>
-                    </div>
-                  )}
-                </Button>
-              </div>
+            {/* Search Button */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <Button
+                onClick={handleSearch}
+                disabled={isLoading}
+                variant="primary"
+                size="lg"
+                fullWidth
+                isLoading={isLoading}
+                leftIcon={!isLoading ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                ) : undefined}
+              >
+                {isLoading ? 'Searching professionals...' : 'Search People'}
+              </Button>
             </div>
-          </Card>
+          </div>
         </div>
+      </div>
 
-        {/* Results Panel */}
-        <div className="lg:col-span-2">
-          {error && (
-            <Card className="mb-6">
-              <div className="p-6">
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                  <div className="text-red-800">
-                    <h3 className="font-medium">Search Error</h3>
-                    <pre className="mt-2 text-sm whitespace-pre-wrap">{error}</pre>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          )}
-
-          {searchResults && (
-            <>
-              {/* Search Summary */}
+      {/* Results Panel - Takes remaining space */}
+      <div 
+        className="flex-1 transition-all duration-200 ease-out"
+        style={{ 
+          marginLeft: sidebarExpanded ? '560px' : '384px', // Sidebar width + filters width
+          marginTop: '56px', // Below top bar
+          height: 'calc(100vh - 56px)' // Full height minus top bar
+        }}
+      >
+        <div className="h-full overflow-y-auto" id="search-results-scroll">
+          <div className="p-6">
+            {error && (
               <Card className="mb-6">
                 <div className="p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Search Results
-                    </h2>
-                    <div className="text-sm text-gray-600">
-                      {searchResults.data.metadata.total_results.toLocaleString()} profiles found
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div className="text-red-800">
+                      <h3 className="font-medium">Search Error</h3>
+                      <pre className="mt-2 text-sm whitespace-pre-wrap">{error}</pre>
                     </div>
-                  </div>
-
-                  {searchResults.data.quality_verification.enabled && searchResults.data.quality_verification.distribution && (
-                    <div className="grid md:grid-cols-3 gap-4 mb-4">
-                      <div className="bg-green-50 p-3 rounded">
-                        <div className="text-2xl font-bold text-green-600">
-                          {searchResults.data.quality_verification.distribution.high_quality}
-                        </div>
-                        <div className="text-sm text-green-700">High Quality</div>
-                      </div>
-                      <div className="bg-yellow-50 p-3 rounded">
-                        <div className="text-2xl font-bold text-yellow-600">
-                          {searchResults.data.quality_verification.distribution.medium_quality}
-                        </div>
-                        <div className="text-sm text-yellow-700">Medium Quality</div>
-                      </div>
-                      <div className="bg-red-50 p-3 rounded">
-                        <div className="text-2xl font-bold text-red-600">
-                          {searchResults.data.quality_verification.distribution.low_quality}
-                        </div>
-                        <div className="text-sm text-red-700">Low Quality</div>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="text-sm text-gray-600">
-                    Page {searchResults.data.metadata.page} of {searchResults.data.metadata.total_pages} • 
-                    Credits Used: {searchResults.data.credits_used} • 
-                    {searchResults.data.quality_verification.estimated_savings && (
-                      <span className="text-green-600 font-medium">
-                        {searchResults.data.quality_verification.estimated_savings}
-                      </span>
-                    )}
                   </div>
                 </div>
               </Card>
+            )}
 
-              {/* Profile Results */}
-              <div className="space-y-4">
-                {searchResults.data.profiles.map((profile, index) => (
-                  <Card key={index} className="hover:shadow-lg transition-shadow">
-                    <div className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                          {profile.profile_picture_url ? (
-                            <img
-                              src={profile.profile_picture_url}
-                              alt={profile.full_name}
-                              className="w-16 h-16 rounded-full object-cover"
-                            />
-                          ) : (
-                            <UserGroupIcon className="w-8 h-8 text-gray-400" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {profile.full_name}
-                              </h3>
-                              <p className="text-blue-600 font-medium">
-                                {profile.title}
-                              </p>
-                              {profile.headline && (
-                                <p className="text-sm text-gray-600 mt-1">
-                                  {profile.headline}
-                                </p>
-                              )}
-                            </div>
-                            
-                            {/* Quality scores removed for faster performance */}
-                          </div>
-
-                          <div className="mt-3 space-y-2">
-                            {profile.company && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <BuildingOfficeIcon className="w-4 h-4 mr-2" />
-                                {profile.company.name}
-                              </div>
-                            )}
-                            {profile.location && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <MapPinIcon className="w-4 h-4 mr-2" />
-                                {profile.location}
-                              </div>
-                            )}
-                          </div>
-
-                          {profile.contact_availability && (
-                            <div className="mt-3 flex gap-4 text-xs">
-                              <span className={profile.contact_availability.personal_email ? 'text-green-600' : 'text-gray-400'}>
-                                📧 Personal Email: {profile.contact_availability.personal_email ? '✓' : '✗'}
-                              </span>
-                              <span className={profile.contact_availability.work_email ? 'text-green-600' : 'text-gray-400'}>
-                                💼 Work Email: {profile.contact_availability.work_email ? '✓' : '✗'}
-                                {profile.contact_availability.work_email_status === 'Verified' && (
-                                  <span className="text-green-700 font-medium"> ✓ Verified</span>
-                                )}
-                              </span>
-                              <span className={profile.contact_availability.phone ? 'text-green-600' : 'text-gray-400'}>
-                                📱 Phone: {profile.contact_availability.phone ? '✓' : '✗'}
-                              </span>
-                            </div>
-                          )}
-                        </div>
+            {searchResults && (
+              <>
+                {/* Search Summary */}
+                <Card className="mb-6">
+                  <div className="p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold text-gray-900">
+                        Search Results
+                      </h2>
+                      <div className="text-sm text-gray-600">
+                        {searchResults.data.metadata.total_results.toLocaleString()} profiles found
                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </>
-          )}
 
-          {/* Empty State */}
-          {!searchResults && !error && (
-            <Card>
-              <div className="p-12 text-center">
-                <FunnelIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Ready to Search
-                </h3>
-                <p className="text-gray-600">
-                  Configure your filters and click "Search People" to find exactly the right prospects using ContactOut's powerful search engine.
-                </p>
-              </div>
-            </Card>
-          )}
+                    {searchResults.data.quality_verification?.enabled && searchResults.data.quality_verification?.distribution && (
+                      <div className="grid md:grid-cols-3 gap-4 mb-4">
+                        <div className="bg-green-50 p-3 rounded">
+                          <div className="text-2xl font-bold text-green-600">
+                            {searchResults.data.quality_verification?.distribution?.high_quality || 0}
+                          </div>
+                          <div className="text-sm text-green-700">High Quality</div>
+                        </div>
+                        <div className="bg-yellow-50 p-3 rounded">
+                          <div className="text-2xl font-bold text-yellow-600">
+                            {searchResults.data.quality_verification?.distribution?.medium_quality || 0}
+                          </div>
+                          <div className="text-sm text-yellow-700">Medium Quality</div>
+                        </div>
+                        <div className="bg-red-50 p-3 rounded">
+                          <div className="text-2xl font-bold text-red-600">
+                            {searchResults.data.quality_verification?.distribution?.low_quality || 0}
+                          </div>
+                          <div className="text-sm text-red-700">Low Quality</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="text-sm text-gray-600">
+                      Page {searchResults.data.metadata.page} of {searchResults.data.metadata.total_pages} • 
+                      Credits Used: {searchResults.data.credits_used} • 
+                      {searchResults.data.quality_verification?.estimated_savings && (
+                        <span className="text-green-600 font-medium">
+                          {searchResults.data.quality_verification?.estimated_savings}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Profile Results */}
+                <div className="space-y-4">
+                  {searchResults.data.profiles.map((profile, index) => (
+                    <Card key={index} className="hover:shadow-lg transition-shadow">
+                      <div className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                            {profile.profile_picture_url ? (
+                              <img
+                                src={profile.profile_picture_url}
+                                alt={profile.full_name}
+                                className="w-16 h-16 rounded-full object-cover"
+                              />
+                            ) : (
+                              <UserGroupIcon className="w-8 h-8 text-gray-400" />
+                            )}
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="text-lg font-semibold text-gray-900">
+                                  {profile.full_name}
+                                </h3>
+                                <p className="text-blue-600 font-medium">
+                                  {profile.title}
+                                </p>
+                                {profile.headline && (
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {profile.headline}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="mt-3 space-y-2">
+                              {profile.company && (
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <BuildingOfficeIcon className="w-4 h-4 mr-2" />
+                                  {profile.company.name}
+                                </div>
+                              )}
+                              {profile.location && (
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <MapPinIcon className="w-4 h-4 mr-2" />
+                                  {profile.location}
+                                </div>
+                              )}
+                            </div>
+
+                            {profile.contact_availability && (
+                              <div className="mt-3 flex gap-4 text-xs">
+                                <span className={profile.contact_availability.personal_email ? 'text-green-600' : 'text-gray-400'}>
+                                  📧 Personal Email: {profile.contact_availability.personal_email ? '✓' : '✗'}
+                                </span>
+                                <span className={profile.contact_availability.work_email ? 'text-green-600' : 'text-gray-400'}>
+                                  💼 Work Email: {profile.contact_availability.work_email ? '✓' : '✗'}
+                                  {profile.contact_availability.work_email_status === 'Verified' && (
+                                    <span className="text-green-700 font-medium"> ✓ Verified</span>
+                                  )}
+                                </span>
+                                <span className={profile.contact_availability.phone ? 'text-green-600' : 'text-gray-400'}>
+                                  📱 Phone: {profile.contact_availability.phone ? '✓' : '✗'}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Empty State */}
+            {!searchResults && !error && (
+              <Card>
+                <div className="p-12 text-center">
+                  <FunnelIcon className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Ready to Search
+                  </h3>
+                  <p className="text-gray-600">
+                    Configure your filters and click "Search People" to find exactly the right prospects using ContactOut's powerful search engine.
+                  </p>
+                </div>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -606,3 +606,41 @@ input:focus, button:focus {
   }
 }
 
+/* Advanced People Search specific scrolling behavior */
+body[data-scroll-section="filters"] #search-results-scroll {
+  overflow: hidden !important;
+}
+
+body[data-scroll-section="results"] #search-filters-scroll {
+  overflow: hidden !important;
+}
+
+/* Default scrolling for search components */
+#search-filters-scroll,
+#search-results-scroll {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-300) transparent;
+}
+
+#search-filters-scroll::-webkit-scrollbar,
+#search-results-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+#search-filters-scroll::-webkit-scrollbar-track,
+#search-results-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#search-filters-scroll::-webkit-scrollbar-thumb,
+#search-results-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-gray-300);
+  border-radius: 3px;
+}
+
+#search-filters-scroll::-webkit-scrollbar-thumb:hover,
+#search-results-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-gray-400);
+}
+

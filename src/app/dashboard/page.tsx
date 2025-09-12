@@ -13,6 +13,7 @@ import CampaignCreationForm from '@/components/campaigns/CampaignCreationForm';
 import { useGlobalEmailStats } from '@/hooks/useGlobalEmailStats';
 import CompanyEmployeeSearch from '@/components/leads/CompanyEmployeeSearch';
 import AdvancedPeopleSearch from '@/components/leads/AdvancedPeopleSearch';
+import CompanyIntelligence from '@/components/leads/CompanyIntelligence';
 
 import {
   HomeIcon,
@@ -57,7 +58,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tab = urlParams.get('tab');
-    if (tab && ['dashboard', 'campaigns', 'leads', 'search', 'analytics', 'settings'].includes(tab)) {
+    if (tab && ['dashboard', 'campaigns', 'leads', 'search', 'company', 'analytics', 'settings'].includes(tab)) {
       setActiveTab(tab);
     }
   }, []);
@@ -142,16 +143,21 @@ export default function DashboardPage() {
       {/* Main content */}
       <main className="pt-14 ml-0 md:ml-16 transition-all duration-200">
         <div className="min-h-screen">
-          <div className="py-6 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-7xl mx-auto">
-              {activeTab === 'dashboard' && <DashboardContent user={user} />}
-              {activeTab === 'campaigns' && <CampaignsContent />}
-              {activeTab === 'leads' && <LeadsContent />}
-              {activeTab === 'search' && <SearchContent />}
-              {activeTab === 'analytics' && <AnalyticsContent />}
-              {activeTab === 'settings' && <SettingsContent />}
+          {activeTab === 'search' ? (
+            // Give search full control over its layout
+            <SearchContent />
+          ) : (
+            <div className="py-6 px-4 sm:px-6 lg:px-8">
+              <div className="max-w-7xl mx-auto">
+                {activeTab === 'dashboard' && <DashboardContent user={user} />}
+                {activeTab === 'campaigns' && <CampaignsContent />}
+                {activeTab === 'leads' && <LeadsContent />}
+                {activeTab === 'company' && <CompanyIntelligence />}
+                {activeTab === 'analytics' && <AnalyticsContent />}
+                {activeTab === 'settings' && <SettingsContent />}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
     </div>
@@ -883,64 +889,11 @@ function SettingsContent() {
   );
 }
 
-// Search Content Component - ContactOut Integration with Multiple Search Types
+// Search Content Component - Only Advanced People Search
 function SearchContent() {
-  const [activeSearchTab, setActiveSearchTab] = useState('company');
-
-  const searchTabs = [
-    { 
-      id: 'company', 
-      name: 'Company Employees', 
-      icon: UserGroupIcon,
-      description: 'Find employees at specific companies'
-    },
-    { 
-      id: 'advanced', 
-      name: 'Advanced People Search', 
-      icon: FunnelIcon,
-      description: 'Use 15+ filters to find exact prospects'
-    }
-  ];
-
   return (
-    <div className="h-full">
-      {/* Search Type Tabs */}
-      <div className="mb-6">
-        <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8">
-            {searchTabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveSearchTab(tab.id)}
-                  className={`
-                    group inline-flex items-center py-4 px-1 border-b-2 font-medium text-sm
-                    ${activeSearchTab === tab.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }
-                  `}
-                >
-                  <Icon className="w-5 h-5 mr-2" />
-                  <div className="text-left">
-                    <div>{tab.name}</div>
-                    <div className="text-xs text-gray-400 font-normal">
-                      {tab.description}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-      </div>
-
-      {/* Search Components */}
-      <div className="h-full">
-        {activeSearchTab === 'company' && <CompanyEmployeeSearch />}
-        {activeSearchTab === 'advanced' && <AdvancedPeopleSearch />}
-      </div>
+    <div className="h-screen">
+      <AdvancedPeopleSearch />
     </div>
   );
 }
