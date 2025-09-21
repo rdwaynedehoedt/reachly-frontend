@@ -119,6 +119,43 @@ export default function AdvancedPeopleSearch() {
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProfiles, setSelectedProfiles] = useState<Set<number>>(new Set());
+  const [resultsPerPage, setResultsPerPage] = useState(25);
+  const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+ 
+  // Column visibility state - default to basic info only
+  const [visibleColumns, setVisibleColumns] = useState({
+    name: true,
+    title: true,
+    company: true,
+    location: true,
+    personal_email: false,
+    work_email: false,
+    phone: false,
+    industry: false,
+    experience: false,
+    education: false,
+    skills: false,
+    company_size: false,
+    linkedin: false,
+    github: false,
+    summary: false,
+    actions: true
+  });
+  const [showColumnSelector, setShowColumnSelector] = useState(false);
+  
+  // FindyMail integration state
+  const [findingEmails, setFindingEmails] = useState<{[key: number]: boolean}>({});
+  const [foundEmails, setFoundEmails] = useState<{[key: number]: string}>({});
+  
+  // Export functionality
+  const [isExporting, setIsExporting] = useState(false);
+  
+  // Save as list functionality
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [listName, setListName] = useState('');
+  const [listDescription, setListDescription] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   
   // UI State
   const [expandedSections, setExpandedSections] = useState<{[key: string]: boolean}>({
@@ -278,6 +315,59 @@ export default function AdvancedPeopleSearch() {
       setError('Failed to connect to search service. Make sure the backend is running.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // FindyMail API integration
+  const findEmailFromLinkedIn = async (profileIndex: number, linkedinUrl: string) => {
+    setFindingEmails(prev => ({ ...prev, [profileIndex]: true }));
+    
+    try {
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000';
+      
+      // Get auth token from localStorage
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      
+      const response = await fetch(`${backendApiUrl}/api/findymail/find-email-linkedin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
+        },
+        body: JSON.stringify({
+          linkedin_url: linkedinUrl,
+          lead_id: null // We can add lead_id if we have it
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success && result.data?.email) {
+        setFoundEmails(prev => ({ 
+          ...prev, 
+          [profileIndex]: result.data.email 
+        }));
+        
+        // Show success message
+        alert(`✅ Email found: ${result.data.email}\n${result.cached ? 'From cache' : 'Via FindyMail API'}\nCredits used: ${result.credits_used}`);
+      } else {
+        // Handle errors
+        let errorMessage = 'Failed to find email';
+        if (response.status === 402) {
+          errorMessage = '💳 Insufficient FindyMail credits';
+        } else if (response.status === 404) {
+          errorMessage = '🔍 No email found for this LinkedIn profile';
+        } else if (result.error) {
+          errorMessage = result.error;
+        }
+        
+        alert(`❌ ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('FindyMail API Error:', error);
+      alert('❌ Failed to connect to FindyMail service');
+    } finally {
+      setFindingEmails(prev => ({ ...prev, [profileIndex]: false }));
     }
   };
 
@@ -474,6 +564,190 @@ export default function AdvancedPeopleSearch() {
     );
   };
 
+  // CSV Export Functions
+  const convertToCSV = (data: any[]) => {
+    if (data.length === 0) return '';
+    
+    const headers = Object.keys(data[0]);
+    const csvHeaders = headers.join(',');
+    
+    const csvRows = data.map(row => 
+      headers.map(header => {
+        const value = row[header];
+        // Escape commas and quotes in CSV
+        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value || '';
+      }).join(',')
+    );
+    
+    return [csvHeaders, ...csvRows].join('\n');
+  };
+
+  const downloadCSV = (data: any[], filename: string) => {
+    const csv = convertToCSV(data);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  const exportSelectedProfiles = () => {
+    if (!searchResults || selectedProfiles.size === 0) {
+      alert('Please select profiles to export');
+      return;
+    }
+
+    setIsExporting(true);
+
+    try {
+      const selectedData = Array.from(selectedProfiles).map(index => {
+        const profile = searchResults.data.profiles[index];
+        
+        // Debug: Log the profile structure to console
+        console.log('Profile structure for export:', profile);
+        
+        return {
+          Name: profile.full_name || '',
+          Title: profile.title || '',
+          Company: profile.company?.name || profile.company || '',
+          Location: profile.location || '',
+          LinkedIn: profile.linkedin_url || '',
+          Email: foundEmails[index] || '',
+          Source: foundEmails[index] ? 'ContactOut + FindyMail' : 'ContactOut',
+          Industry: profile.industry || '',
+          CompanySize: profile.company?.size || '',
+          Experience: profile.experience && profile.experience.length > 0 
+            ? profile.experience[0].title : '',
+          Education: profile.education && profile.education.length > 0 
+            ? profile.education[0].school_name : '',
+          Skills: profile.skills && profile.skills.length > 0 
+            ? profile.skills.slice(0, 3).join(', ') : '',
+          Summary: profile.summary ? profile.summary.substring(0, 100) + '...' : ''
+        };
+      });
+
+      const timestamp = new Date().toISOString().slice(0, 10);
+      const filename = `contactout-export-${timestamp}.csv`;
+      
+      downloadCSV(selectedData, filename);
+      
+      // Show success message
+      alert(`✅ Exported ${selectedData.length} profiles to ${filename}`);
+      
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('❌ Export failed. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  // Save as Contact List Functions
+  const openSaveModal = () => {
+    if (!searchResults || selectedProfiles.size === 0) {
+      alert('Please select profiles to save');
+      return;
+    }
+    setShowSaveModal(true);
+  };
+
+  const saveAsContactList = async () => {
+    if (!listName.trim()) {
+      alert('Please enter a list name');
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      // Get auth token
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      
+      if (!token) {
+        alert('Please login to save contact lists');
+        return;
+      }
+
+      // Prepare profile data
+      const selectedData = Array.from(selectedProfiles).map(index => {
+        const profile = searchResults!.data.profiles[index];
+        const [firstName, ...lastNameParts] = (profile.full_name || '').split(' ');
+        const lastName = lastNameParts.join(' ');
+        
+        return {
+          name: profile.full_name || '',
+          firstName: firstName || '',
+          lastName: lastName || '',
+          title: profile.title || '',
+          company: profile.company?.name || profile.company || '',
+          location: profile.location || '',
+          linkedin_url: profile.linkedin_url || '',
+          email: foundEmails[index] || null,
+          industry: profile.industry || '',
+          source: foundEmails[index] ? 'ContactOut + FindyMail' : 'ContactOut'
+        };
+      });
+
+      // Filter profiles with emails (only save those with emails)
+      const profilesWithEmails = selectedData.filter(profile => profile.email);
+
+      if (profilesWithEmails.length === 0) {
+        alert('No profiles with emails found. Please use "Find Email" to get emails before saving.');
+        return;
+      }
+
+      // Call backend API
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendApiUrl}/api/contact-lists/create-from-search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          listName: listName.trim(),
+          description: listDescription.trim() || `ContactOut search results - ${new Date().toLocaleDateString()}`,
+          profiles: profilesWithEmails
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert(`✅ Created contact list "${listName}" with ${result.data.importedCount} contacts!`);
+        
+        // Reset modal
+        setShowSaveModal(false);
+        setListName('');
+        setListDescription('');
+        setSelectedProfiles(new Set()); // Clear selection
+        
+        // Show success details
+        setTimeout(() => {
+          alert(`📊 List Details:\n- Name: ${listName}\n- Contacts: ${result.data.importedCount}\n- Source: ContactOut + FindyMail\n\nYou can now use this list in email campaigns!`);
+        }, 500);
+      } else {
+        alert(`❌ Error creating list: ${result.message || 'Unknown error'}`);
+      }
+
+    } catch (error) {
+      console.error('Save list error:', error);
+      alert('❌ Failed to save contact list. Please check your connection and try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Search Filters Panel - Fixed position aligned with sidebar */}
@@ -487,9 +761,9 @@ export default function AdvancedPeopleSearch() {
         }}
       >
         <div className="h-full overflow-y-auto" id="search-filters-scroll">
-          <div className="p-4">
+          <div className="pt-2 px-4 pb-4">
             {/* Clean Header */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+            <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">Search Filters</h2>
                 <p className="text-xs text-gray-500">Use 15+ filters to find exact prospects</p>
@@ -506,7 +780,7 @@ export default function AdvancedPeopleSearch() {
 
 
               {/* Basic Information */}
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <button
                   onClick={() => toggleSection('basic')}
                   className="w-full text-left py-2 group transition-all duration-200"
@@ -808,7 +1082,7 @@ export default function AdvancedPeopleSearch() {
               </div>
 
             {/* Search Button */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-4 pt-4 border-t border-gray-200">
               <Button
                 onClick={handleSearch}
                 disabled={isLoading}
@@ -832,16 +1106,16 @@ export default function AdvancedPeopleSearch() {
       {/* Results Panel - Takes remaining space */}
       <div 
         className="flex-1 transition-all duration-200 ease-out"
-        style={{ 
-          marginLeft: sidebarExpanded ? '560px' : '384px', // Sidebar width + filters width
-          marginTop: '56px', // Below top bar
-          height: 'calc(100vh - 56px)' // Full height minus top bar
-        }}
-      >
-        <div className="h-full overflow-y-auto" id="search-results-scroll">
-          <div className="p-6">
+          style={{
+            marginLeft: sidebarExpanded ? '560px' : '384px', // Sidebar width + filters width
+            marginTop: '56px', // Below top bar
+            height: 'calc(100vh - 56px)' // Full height minus top bar
+          }}
+        >
+          <div className="h-full overflow-y-auto" id="search-results-scroll">
+            <div className="pt-2 px-4 pb-4">
             {error && (
-              <Card className="mb-6">
+              <Card className="mb-4">
                 <div className="p-6">
                   <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                     <div className="text-red-800">
@@ -856,124 +1130,820 @@ export default function AdvancedPeopleSearch() {
             {searchResults && (
               <>
                 {/* Search Summary */}
-                <Card className="mb-6">
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-lg font-semibold text-gray-900">
-                        Search Results
-                      </h2>
-                      <div className="text-sm text-gray-600">
+                {/* Compact Results Toolbar */}
+                <div className="bg-white border-b border-gray-200 py-2 mb-3">
+                  {/* Desktop Layout */}
+                  <div className="hidden lg:flex items-center justify-between">
+                    <div className="flex items-center space-x-6">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          checked={selectedProfiles.size === searchResults.data.profiles.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProfiles(new Set(searchResults.data.profiles.map((_, index) => index)));
+                            } else {
+                              setSelectedProfiles(new Set());
+                            }
+                          }}
+                        />
+                        <span className="text-sm text-gray-600">
+                          {selectedProfiles.size > 0 ? `${selectedProfiles.size} selected` : 'Select all'}
+                        </span>
+                      </div>
+                      
+                      <div className="text-sm text-gray-700 font-medium">
                         {searchResults.data.metadata.total_results.toLocaleString()} profiles found
                       </div>
-                    </div>
-
-                    {searchResults.data.quality_verification?.enabled && searchResults.data.quality_verification?.distribution && (
-                      <div className="grid md:grid-cols-3 gap-4 mb-4">
-                        <div className="bg-green-50 p-3 rounded">
-                          <div className="text-2xl font-bold text-green-600">
-                            {searchResults.data.quality_verification?.distribution?.high_quality || 0}
-                          </div>
-                          <div className="text-sm text-green-700">High Quality</div>
+                      
+                      {/* Action buttons when items are selected */}
+                      {selectedProfiles.size > 0 && (
+                        <div className="flex items-center space-x-2">
+                          <button 
+                            onClick={exportSelectedProfiles}
+                            disabled={isExporting}
+                            className="text-sm text-gray-700 hover:text-blue-600 transition-colors px-3 py-1 rounded border border-gray-300 hover:border-blue-400 bg-white hover:bg-blue-50 disabled:bg-gray-100 disabled:text-gray-400 flex items-center space-x-1"
+                          >
+                            {isExporting ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                                <span>Exporting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span>📤</span>
+                                <span>Export {selectedProfiles.size}</span>
+                              </>
+                            )}
+                          </button>
+                          <button 
+                            onClick={openSaveModal}
+                            className="text-sm text-gray-700 hover:text-green-600 transition-colors px-3 py-1 rounded border border-gray-300 hover:border-green-400 bg-white hover:bg-green-50"
+                          >
+                            💾 Save as List
+                          </button>
                         </div>
-                        <div className="bg-yellow-50 p-3 rounded">
-                          <div className="text-2xl font-bold text-yellow-600">
-                            {searchResults.data.quality_verification?.distribution?.medium_quality || 0}
-                          </div>
-                          <div className="text-sm text-yellow-700">Medium Quality</div>
-                        </div>
-                        <div className="bg-red-50 p-3 rounded">
-                          <div className="text-2xl font-bold text-red-600">
-                            {searchResults.data.quality_verification?.distribution?.low_quality || 0}
-                          </div>
-                          <div className="text-sm text-red-700">Low Quality</div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="text-sm text-gray-600">
-                      Page {searchResults.data.metadata.page} of {searchResults.data.metadata.total_pages} • 
-                      Credits Used: {searchResults.data.credits_used} • 
-                      {searchResults.data.quality_verification?.estimated_savings && (
-                        <span className="text-green-600 font-medium">
-                          {searchResults.data.quality_verification?.estimated_savings}
-                        </span>
                       )}
                     </div>
+                    
+                    <div className="flex items-center space-x-6">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">Show:</span>
+                        <select 
+                          className="text-sm border-gray-300 rounded px-3 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          value={resultsPerPage}
+                          onChange={(e) => setResultsPerPage(Number(e.target.value))}
+                        >
+                          <option value="25">25</option>
+                          <option value="50">50</option>
+                          <option value="100">100</option>
+                        </select>
+                      </div>
+                      
+                      {/* View Toggle */}
+                      <div className="flex items-center space-x-1 border border-gray-300 rounded p-1">
+                        <button
+                          className={`p-1 rounded transition-colors ${
+                            viewMode === 'card' 
+                              ? 'bg-blue-100 text-blue-600' 
+                              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          }`}
+                          onClick={() => setViewMode('card')}
+                          title="Card View"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                          </svg>
+                        </button>
+                        <button
+                          className={`p-1 rounded transition-colors ${
+                            viewMode === 'table' 
+                              ? 'bg-blue-100 text-blue-600' 
+                              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                          }`}
+                          onClick={() => setViewMode('table')}
+                          title="Table View"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1z" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      {/* Column Selector */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setShowColumnSelector(!showColumnSelector)}
+                          className="flex items-center space-x-2 px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                          </svg>
+                          <span>Columns</span>
+                        </button>
+                        
+                        {showColumnSelector && (
+                          <div className="absolute top-full right-0 mt-2 w-64 bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-4">
+                            <div className="text-sm font-medium mb-3">Select Columns</div>
+                            <div className="space-y-2 max-h-60 overflow-y-auto">
+                              {Object.entries({
+                                name: 'Name',
+                                title: 'Title', 
+                                company: 'Company',
+                                location: 'Location',
+                                personal_email: 'Personal Email',
+                                work_email: 'Work Email',
+                                phone: 'Phone',
+                                industry: 'Industry',
+                                experience: 'Experience',
+                                education: 'Education',
+                                skills: 'Skills',
+                                company_size: 'Company Size',
+                                linkedin: 'LinkedIn URL',
+                                github: 'GitHub',
+                                summary: 'Summary',
+                                actions: 'Actions'
+                              }).map(([key, label]) => (
+                                <label key={key} className="flex items-center space-x-2 text-sm">
+                                  <input
+                                    type="checkbox"
+                                    className="w-4 h-4"
+                                    checked={visibleColumns[key as keyof typeof visibleColumns]}
+                                    onChange={(e) => setVisibleColumns(prev => ({
+                                      ...prev,
+                                      [key]: e.target.checked
+                                    }))}
+                                  />
+                                  <span>{label}</span>
+                                </label>
+                              ))}
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between">
+                              <button 
+                                onClick={() => setVisibleColumns({
+                                 name: true, title: true, company: true, location: true,
+                                   personal_email: false, work_email: false, phone: false,
+                                   industry: false, experience: false, education: false,
+                                   skills: false, company_size: false, linkedin: false,
+                                   github: false, summary: false, actions: true
+                                })}
+                                className="text-xs text-gray-600 hover:text-blue-600"
+                              >
+                                Reset to Basic
+                              </button>
+                              <button 
+                                onClick={() => setShowColumnSelector(false)}
+                                className="text-xs text-blue-600 hover:text-blue-800"
+                              >
+                                Close
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <button 
+                          className="text-sm text-gray-600 hover:text-blue-600 transition-colors disabled:text-gray-400 px-2 py-1 rounded hover:bg-gray-50"
+                          disabled={searchResults.data.metadata.page <= 1}
+                          onClick={() => {
+                            // TODO: Handle previous page
+                          }}
+                        >
+                          ← Prev
+                        </button>
+                        <div className="text-sm text-gray-600 px-2">
+                          Page {searchResults.data.metadata.page} of {searchResults.data.metadata.total_pages}
+                        </div>
+                        <button 
+                          className="text-sm text-gray-600 hover:text-blue-600 transition-colors disabled:text-gray-400 px-2 py-1 rounded hover:bg-gray-50"
+                          disabled={searchResults.data.metadata.page >= searchResults.data.metadata.total_pages}
+                          onClick={() => {
+                            // TODO: Handle next page
+                          }}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                      
+                      <div className="text-xs text-gray-500">
+                        Credits: {searchResults.data.credits_used}
+                      </div>
+                    </div>
                   </div>
-                </Card>
 
-                {/* Profile Results */}
-                <div className="space-y-4">
-                  {searchResults.data.profiles.map((profile, index) => (
-                    <Card key={index} className="hover:shadow-lg transition-shadow">
-                      <div className="p-6">
-                        <div className="flex items-start gap-4">
-                          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            {profile.profile_picture_url ? (
-                              <img
-                                src={profile.profile_picture_url}
-                                alt={profile.full_name}
-                                className="w-16 h-16 rounded-full object-cover"
-                              />
-                            ) : (
-                              <UserGroupIcon className="w-8 h-8 text-gray-400" />
+                  {/* Mobile Layout */}
+                  <div className="lg:hidden space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          checked={selectedProfiles.size === searchResults.data.profiles.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedProfiles(new Set(searchResults.data.profiles.map((_, index) => index)));
+                            } else {
+                              setSelectedProfiles(new Set());
+                            }
+                          }}
+                        />
+                        <span className="text-sm text-gray-600">
+                          {selectedProfiles.size > 0 ? `${selectedProfiles.size} selected` : 'Select all'}
+                        </span>
+                      </div>
+                      
+                      <div className="text-sm text-gray-700 font-medium">
+                        {searchResults.data.metadata.total_results.toLocaleString()} found
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-sm text-gray-600">Show:</span>
+                          <select 
+                            className="text-sm border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            value={resultsPerPage}
+                            onChange={(e) => setResultsPerPage(Number(e.target.value))}
+                          >
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                          </select>
+                        </div>
+                        
+                        {/* Mobile View Toggle */}
+                        <div className="flex items-center space-x-2">
+                          <div className="flex items-center space-x-1 border border-gray-300 rounded p-1">
+                            <button
+                              className={`p-1 rounded transition-colors ${
+                                viewMode === 'card' 
+                                  ? 'bg-blue-100 text-blue-600' 
+                                  : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                              onClick={() => setViewMode('card')}
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                              </svg>
+                            </button>
+                            <button
+                              className={`p-1 rounded transition-colors ${
+                                viewMode === 'table' 
+                                  ? 'bg-blue-100 text-blue-600' 
+                                  : 'text-gray-500 hover:text-gray-700'
+                              }`}
+                              onClick={() => setViewMode('table')}
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0V4a1 1 0 011-1h16a1 1 0 011 1v16a1 1 0 01-1 1H5a1 1 0 01-1-1z" />
+                              </svg>
+                            </button>
+                          </div>
+                          
+                          {/* Mobile Column Selector */}
+                          <div className="relative">
+                            <button
+                              onClick={() => setShowColumnSelector(!showColumnSelector)}
+                              className="flex items-center space-x-1 px-2 py-1 text-xs border border-gray-300 rounded hover:bg-gray-50"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
+                              </svg>
+                              <span>Cols</span>
+                            </button>
+                            
+                            {showColumnSelector && (
+                              <div className="absolute top-full right-0 mt-2 w-60 bg-white border border-gray-300 rounded-lg shadow-lg z-50 p-3">
+                                <div className="text-xs font-medium mb-2">Select Columns</div>
+                                <div className="space-y-1 max-h-48 overflow-y-auto">
+                                  {Object.entries({
+                                    name: 'Name',
+                                    title: 'Title', 
+                                    company: 'Company',
+                                    location: 'Location',
+                                    personal_email: 'Personal Email',
+                                    work_email: 'Work Email',
+                                    phone: 'Phone',
+                                    industry: 'Industry',
+                                    experience: 'Experience',
+                                    education: 'Education',
+                                    skills: 'Skills',
+                                    company_size: 'Company Size',
+                                    linkedin: 'LinkedIn URL',
+                                    github: 'GitHub',
+                                    summary: 'Summary',
+                                    actions: 'Actions'
+                                  }).map(([key, label]) => (
+                                    <label key={key} className="flex items-center space-x-2 text-xs">
+                                      <input
+                                        type="checkbox"
+                                        className="w-3 h-3"
+                                        checked={visibleColumns[key as keyof typeof visibleColumns]}
+                                        onChange={(e) => setVisibleColumns(prev => ({
+                                          ...prev,
+                                          [key]: e.target.checked
+                                        }))}
+                                      />
+                                      <span>{label}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                                <div className="mt-2 pt-2 border-t border-gray-200 flex justify-between">
+                                  <button 
+                                    onClick={() => setVisibleColumns({
+                                 name: true, title: true, company: true, location: true,
+                                   personal_email: false, work_email: false, phone: false,
+                                   industry: false, experience: false, education: false,
+                                   skills: false, company_size: false, linkedin: false,
+                                   github: false, summary: false, actions: true
+                                    })}
+                                    className="text-xs text-gray-600 hover:text-blue-600"
+                                  >
+                                    Reset
+                                  </button>
+                                  <button 
+                                    onClick={() => setShowColumnSelector(false)}
+                                    className="text-xs text-blue-600 hover:text-blue-800"
+                                  >
+                                    Close
+                                  </button>
+                                </div>
+                              </div>
                             )}
                           </div>
+                        </div>
+                        
+                        <div className="text-xs text-gray-500">
+                          Credits: {searchResults.data.credits_used}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="text-sm text-gray-600 hover:text-blue-600 transition-colors disabled:text-gray-400 px-2 py-1"
+                          disabled={searchResults.data.metadata.page <= 1}
+                          onClick={() => {
+                            // TODO: Handle previous page
+                          }}
+                        >
+                          ← Prev
+                        </button>
+                        <div className="text-sm text-gray-600">
+                          Page {searchResults.data.metadata.page} of {searchResults.data.metadata.total_pages}
+                        </div>
+                        <button 
+                          className="text-sm text-gray-600 hover:text-blue-600 transition-colors disabled:text-gray-400 px-2 py-1"
+                          disabled={searchResults.data.metadata.page >= searchResults.data.metadata.total_pages}
+                          onClick={() => {
+                            // TODO: Handle next page
+                          }}
+                        >
+                          Next →
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {/* Mobile Action buttons when items are selected */}
+                    {selectedProfiles.size > 0 && (
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={exportSelectedProfiles}
+                          disabled={isExporting}
+                          className="text-sm text-gray-700 hover:text-blue-600 transition-colors px-3 py-1 rounded border border-gray-300 hover:border-blue-400 bg-white hover:bg-blue-50 disabled:bg-gray-100 disabled:text-gray-400 flex items-center space-x-1"
+                        >
+                          {isExporting ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                              <span>Exporting...</span>
+                            </>
+                          ) : (
+                            <>
+                              <span>📤</span>
+                              <span>Export</span>
+                            </>
+                          )}
+                        </button>
+                        <button 
+                          onClick={openSaveModal}
+                          className="text-sm text-gray-700 hover:text-green-600 transition-colors px-3 py-1 rounded border border-gray-300 hover:border-green-400 bg-white hover:bg-green-50"
+                        >
+                          💾 Save as List
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h3 className="text-lg font-semibold text-gray-900">
-                                  {profile.full_name}
-                                </h3>
-                                <p className="text-blue-600 font-medium">
-                                  {profile.title}
-                                </p>
-                                {profile.headline && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {profile.headline}
+                {/* Profile Results */}
+                {viewMode === 'card' ? (
+                  <div className="space-y-3">
+                    {searchResults.data.profiles.map((profile, index) => (
+                    <Card key={index} className="hover:shadow-sm transition-all duration-200 border border-gray-200">
+                      <div className="p-5">
+                        {/* Two-Column Layout */}
+                        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                          
+                          {/* Left Column - Profile Details (3/4 width) */}
+                          <div className="lg:col-span-3 space-y-4">
+                            
+                            {/* Selection Checkbox */}
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 mt-1"
+                                checked={selectedProfiles.has(index)}
+                                onChange={(e) => {
+                                  const newSelected = new Set(selectedProfiles);
+                                  if (e.target.checked) {
+                                    newSelected.add(index);
+                                  } else {
+                                    newSelected.delete(index);
+                                  }
+                                  setSelectedProfiles(newSelected);
+                                }}
+                              />
+                              <div className="flex-1 space-y-3">
+                            
+                            {/* Header Section */}
+                            <div className="flex items-start gap-4">
+                              {/* Profile Picture */}
+                              <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                {profile.profile_picture_url ? (
+                                  <img
+                                    src={profile.profile_picture_url}
+                                    alt={profile.full_name}
+                                    className="w-12 h-12 rounded-full object-cover"
+                                  />
+                                ) : (
+                                  <UserGroupIcon className="w-6 h-6 text-gray-400" />
+                                )}
+                              </div>
+
+                              {/* Name & Info */}
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-3">
+                                  <h3 className="text-lg font-semibold text-gray-900">
+                                    {profile.full_name}
+                                  </h3>
+                                  {profile.linkedin_url && (
+                                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" 
+                                       className="text-gray-400 hover:text-blue-600 transition-colors">
+                                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                                      </svg>
+                                    </a>
+                                  )}
+                                </div>
+
+                                {profile.location && (
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    {profile.location}
                                   </p>
                                 )}
                               </div>
                             </div>
 
-                            <div className="mt-3 space-y-2">
-                              {profile.company && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <BuildingOfficeIcon className="w-4 h-4 mr-2" />
-                                  {profile.company.name}
-                                </div>
-                              )}
-                              {profile.location && (
-                                <div className="flex items-center text-sm text-gray-600">
-                                  <MapPinIcon className="w-4 h-4 mr-2" />
-                                  {profile.location}
-                                </div>
-                              )}
-                            </div>
-
-                            {profile.contact_availability && (
-                              <div className="mt-3 flex gap-4 text-xs">
-                                <span className={profile.contact_availability.personal_email ? 'text-green-600' : 'text-gray-400'}>
-                                  📧 Personal Email: {profile.contact_availability.personal_email ? '✓' : '✗'}
-                                </span>
-                                <span className={profile.contact_availability.work_email ? 'text-green-600' : 'text-gray-400'}>
-                                  💼 Work Email: {profile.contact_availability.work_email ? '✓' : '✗'}
-                                  {profile.contact_availability.work_email_status === 'Verified' && (
-                                    <span className="text-green-700 font-medium"> ✓ Verified</span>
+                            {/* Experience */}
+                            <div className="space-y-2">
+                              {profile.title && (
+                                <div>
+                                  <span className="font-semibold text-gray-900">{profile.title}</span>
+                                  {profile.company && (
+                                    <>
+                                      <span className="text-gray-500"> at </span>
+                                      <span className="text-blue-600 hover:text-blue-700 transition-colors cursor-pointer font-medium">
+                                        {profile.company.name}
+                                      </span>
+                                    </>
                                   )}
-                                </span>
-                                <span className={profile.contact_availability.phone ? 'text-green-600' : 'text-gray-400'}>
-                                  📱 Phone: {profile.contact_availability.phone ? '✓' : '✗'}
-                                </span>
+                                </div>
+                              )}
+
+                              {profile.headline && (
+                                <p className="text-sm text-gray-600 leading-relaxed">
+                                  {profile.headline}
+                                </p>
+                              )}
                               </div>
-                            )}
+                            </div>
+                              </div>
+                          </div>
+
+                          {/* Right Column - Contact Info (1/4 width) */}
+                          <div className="lg:col-span-1">
+                            <div className="space-y-3 lg:pl-4 lg:border-l lg:border-gray-100">
+                              {/* Contact display removed - use Find Email button below */}
+                              <div>
+                                  {/* Find Email Button */}
+                                  {profile.linkedin_url && (
+                                    <div className="pt-2 border-t border-gray-100">
+                                      {foundEmails[index] ? (
+                                        <div className="space-y-1">
+                                          <div className="text-sm text-green-600 font-medium">
+                                            ✅ {foundEmails[index]}
+                                          </div>
+                                          <div className="text-xs text-gray-500">Found via FindyMail</div>
+                                        </div>
+                                      ) : (
+                                        <button
+                                          onClick={() => findEmailFromLinkedIn(index, profile.linkedin_url)}
+                                          disabled={findingEmails[index]}
+                                          className="w-full text-sm bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                                        >
+                                          {findingEmails[index] ? (
+                                            <>
+                                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                              <span>Finding...</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
+                                              </svg>
+                                              <span>Find Email</span>
+                                            </>
+                                          )}
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Contact info section removed */}
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
                     </Card>
                   ))}
-                </div>
+                  </div>
+                ) : (
+                  /* Spreadsheet View */
+                  <div className="bg-white border border-gray-400 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full" style={{borderCollapse: 'collapse'}}>
+                        {/* Table Header */}
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium w-8">
+                              <input
+                                type="checkbox"
+                                className="w-4 h-4"
+                                checked={selectedProfiles.size === searchResults.data.profiles.length}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedProfiles(new Set(searchResults.data.profiles.map((_, index) => index)));
+                                  } else {
+                                    setSelectedProfiles(new Set());
+                                  }
+                                }}
+                              />
+                            </th>
+                            {visibleColumns.name && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '150px'}}>
+                                Name
+                              </th>
+                            )}
+                            {visibleColumns.title && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '180px'}}>
+                                Title
+                              </th>
+                            )}
+                            {visibleColumns.company && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '150px'}}>
+                                Company
+                              </th>
+                            )}
+                            {visibleColumns.location && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '160px'}}>
+                                Location
+                              </th>
+                            )}
+                            {/* Personal Email header removed */}
+                            {/* Work Email header removed */}
+                            {/* Phone header removed */}
+                            {visibleColumns.industry && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '130px'}}>
+                                Industry
+                              </th>
+                            )}
+                            {visibleColumns.experience && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '150px'}}>
+                                Experience
+                              </th>
+                            )}
+                            {visibleColumns.education && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '140px'}}>
+                                Education
+                              </th>
+                            )}
+                            {visibleColumns.skills && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '120px'}}>
+                                Skills
+                              </th>
+                            )}
+                            {visibleColumns.company_size && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '110px'}}>
+                                Company Size
+                              </th>
+                            )}
+                            {visibleColumns.linkedin && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '200px'}}>
+                                LinkedIn URL
+                              </th>
+                            )}
+                            {visibleColumns.github && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '80px'}}>
+                                GitHub
+                              </th>
+                            )}
+                            {visibleColumns.summary && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '200px'}}>
+                                Summary
+                              </th>
+                            )}
+                            {visibleColumns.actions && (
+                              <th className="border border-gray-400 px-2 py-2 text-left text-sm font-medium" style={{width: '80px'}}>
+                                Actions
+                              </th>
+                            )}
+                          </tr>
+                        </thead>
+                        
+                        {/* Table Body */}
+                        <tbody>
+                          {searchResults.data.profiles.map((profile, index) => (
+                            <tr key={index} className="even:bg-gray-50">
+                              {/* Checkbox */}
+                              <td className="border border-gray-400 px-2 py-2">
+                                <input
+                                  type="checkbox"
+                                  className="w-4 h-4"
+                                  checked={selectedProfiles.has(index)}
+                                  onChange={(e) => {
+                                    const newSelected = new Set(selectedProfiles);
+                                    if (e.target.checked) {
+                                      newSelected.add(index);
+                                    } else {
+                                      newSelected.delete(index);
+                                    }
+                                    setSelectedProfiles(newSelected);
+                                  }}
+                                />
+                              </td>
+                              
+                              {/* Name */}
+                              {visibleColumns.name && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.full_name}
+                                </td>
+                              )}
+                              
+                              {/* Title */}
+                              {visibleColumns.title && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.title || '-'}
+                                </td>
+                              )}
+                              
+                              {/* Company */}
+                              {visibleColumns.company && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.company?.name || '-'}
+                                </td>
+                              )}
+                              
+                              {/* Location */}
+                              {visibleColumns.location && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.location || '-'}
+                                </td>
+                              )}
+                              
+                              {/* Personal Email column removed */}
+                              
+                              {/* Work Email column removed */}
+                              
+                              {/* Phone column removed */}
+                              
+                              {/* Industry */}
+                              {visibleColumns.industry && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.industry || '-'}
+                                </td>
+                              )}
+                              
+                              {/* Experience */}
+                              {visibleColumns.experience && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.experience && profile.experience.length > 0 ? profile.experience[0].title : '-'}
+                                </td>
+                              )}
+                              
+                              {/* Education */}
+                              {visibleColumns.education && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.education && profile.education.length > 0 ? profile.education[0].school_name : '-'}
+                                </td>
+                              )}
+                              
+                              {/* Skills */}
+                              {visibleColumns.skills && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.skills && profile.skills.length > 0 ? profile.skills.slice(0, 2).join(', ') + (profile.skills.length > 2 ? ` +${profile.skills.length - 2}` : '') : '-'}
+                                </td>
+                              )}
+                              
+                              {/* Company Size */}
+                              {visibleColumns.company_size && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.company?.size || '-'}
+                                </td>
+                              )}
+                              
+                              {/* LinkedIn */}
+                              {visibleColumns.linkedin && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.linkedin_url ? (
+                                    <a href={profile.linkedin_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline" title={profile.linkedin_url}>
+                                      {profile.linkedin_url}
+                                    </a>
+                                  ) : '-'}
+                                </td>
+                              )}
+                              
+                              {/* GitHub */}
+                              {visibleColumns.github && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm text-center whitespace-nowrap">
+                                  {profile.github && profile.github.length > 0 ? (
+                                    <a href={`https://github.com/${profile.github[0]}`} target="_blank" rel="noopener noreferrer" className="text-blue-600">
+                                      ✓
+                                    </a>
+                                  ) : '-'}
+                                </td>
+                              )}
+                              
+                              {/* Summary */}
+                              {visibleColumns.summary && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis">
+                                  {profile.summary ? profile.summary.substring(0, 100) + (profile.summary.length > 100 ? '...' : '') : '-'}
+                                </td>
+                              )}
+                              
+                              {/* Actions */}
+                              {visibleColumns.actions && (
+                                <td className="border border-gray-400 px-2 py-2 text-sm text-center whitespace-nowrap">
+                                  <div className="flex flex-col space-y-1">
+                                    {/* Find Email Button */}
+                                    {profile.linkedin_url && (
+                                      <div>
+                                        {foundEmails[index] ? (
+                                          <div className="text-xs text-green-600 font-medium">
+                                            ✅ Found
+                                          </div>
+                                        ) : (
+                                          <button
+                                            onClick={() => findEmailFromLinkedIn(index, profile.linkedin_url)}
+                                            disabled={findingEmails[index]}
+                                            className="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed transition-colors"
+                                          >
+                                            {findingEmails[index] ? (
+                                              <div className="flex items-center space-x-1">
+                                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                                                <span>Finding</span>
+                                              </div>
+                                            ) : (
+                                              'Find Email'
+                                            )}
+                                          </button>
+                                        )}
+                                      </div>
+                                    )}
+                                    
+                                    {/* View Contact Info Button */}
+                                    {(profile.contact_availability?.personal_email || profile.contact_availability?.work_email || profile.contact_availability?.phone) && (
+                                      <button className="text-blue-600 hover:text-blue-800 text-xs">
+                                        View
+                                      </button>
+                                    )}
+                                    
+                                    {/* Default dash when no actions available */}
+                                    {!profile.linkedin_url && !(profile.contact_availability?.personal_email || profile.contact_availability?.work_email || profile.contact_availability?.phone) && (
+                                      <span>-</span>
+                                    )}
+                                  </div>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
@@ -994,6 +1964,101 @@ export default function AdvancedPeopleSearch() {
           </div>
         </div>
       </div>
+
+      {/* Save as Contact List Modal */}
+      {showSaveModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Save as Contact List</h2>
+              <button
+                onClick={() => setShowSaveModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* List Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  List Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={listName}
+                  onChange={(e) => setListName(e.target.value)}
+                  placeholder="e.g., Sri Lanka CEOs, Tech Leaders, etc."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description (Optional)
+                </label>
+                <textarea
+                  value={listDescription}
+                  onChange={(e) => setListDescription(e.target.value)}
+                  placeholder="Brief description of this contact list..."
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                />
+              </div>
+
+              {/* Selection Summary */}
+              <div className="bg-blue-50 p-3 rounded-md">
+                <div className="text-sm text-gray-700">
+                  <div className="flex justify-between">
+                    <span>Selected Profiles:</span>
+                    <span className="font-medium">{selectedProfiles.size}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>With Emails:</span>
+                    <span className="font-medium text-green-600">
+                      {Array.from(selectedProfiles).filter(index => foundEmails[index]).length}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  💡 Only profiles with emails will be saved to the list
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setShowSaveModal(false)}
+                  disabled={isSaving}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 disabled:bg-gray-100 disabled:text-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveAsContactList}
+                  disabled={isSaving || !listName.trim()}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:text-gray-500 flex items-center justify-center space-x-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💾</span>
+                      <span>Save List</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

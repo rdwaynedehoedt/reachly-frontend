@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   DocumentArrowUpIcon, 
   UserPlusIcon, 
@@ -10,7 +10,9 @@ import {
   TrashIcon,
   EyeIcon,
   ArrowRightIcon,
-  PlusIcon
+  PlusIcon,
+  ListBulletIcon,
+  UsersIcon
 } from '@heroicons/react/24/outline';
 import Papa from 'papaparse';
 
@@ -42,6 +44,15 @@ interface ColumnMapping {
   isCustom: boolean;
 }
 
+interface ContactList {
+  id: string;
+  name: string;
+  description?: string;
+  total_contacts: number;
+  active_contacts: number;
+  created_at: string;
+}
+
 // Standard lead fields available for mapping
 const STANDARD_FIELDS = [
   { value: 'email', label: 'Email *', required: true },
@@ -56,11 +67,17 @@ const STANDARD_FIELDS = [
 
 const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsChange }) => {
   const [dragActive, setDragActive] = useState(false);
-  const [importMethod, setImportMethod] = useState<'upload' | 'manual'>('upload');
+  const [importMethod, setImportMethod] = useState<'upload' | 'manual' | 'contact_lists'>('upload');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [manualLead, setManualLead] = useState<CampaignLead>({ email: '' });
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Contact Lists State
+  const [contactLists, setContactLists] = useState<ContactList[]>([]);
+  const [selectedContactList, setSelectedContactList] = useState<string>('');
+  const [isLoadingLists, setIsLoadingLists] = useState(false);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
   
   // CSV Mapping States
   const [csvData, setCsvData] = useState<CSVData | null>(null);
@@ -173,6 +190,104 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
       }
     });
   };
+
+  // Contact Lists Functions
+  const fetchContactLists = async () => {
+    setIsLoadingLists(true);
+    setErrors([]);
+    
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      
+      if (!token) {
+        setErrors(['Please login to access contact lists']);
+        return;
+      }
+
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendApiUrl}/api/contact-lists`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setContactLists(result.data.contactLists || []);
+      } else {
+        setErrors([result.message || 'Failed to fetch contact lists']);
+      }
+    } catch (error) {
+      console.error('Fetch contact lists error:', error);
+      setErrors(['Failed to connect to server. Please check your connection.']);
+    } finally {
+      setIsLoadingLists(false);
+    }
+  };
+
+  const loadLeadsFromContactList = async (listId: string) => {
+    if (!listId) return;
+    
+    setIsLoadingLeads(true);
+    setErrors([]);
+    
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+      
+      if (!token) {
+        setErrors(['Please login to access contact lists']);
+        return;
+      }
+
+      const backendApiUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:5000';
+      const response = await fetch(`${backendApiUrl}/api/contact-lists/${listId}/contacts?limit=1000`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        const contacts = result.data.contacts || [];
+        
+        // Transform contacts to campaign leads
+        const campaignLeads: CampaignLead[] = contacts.map((contact: any) => ({
+          email: contact.email,
+          firstName: contact.first_name || '',
+          lastName: contact.last_name || '',
+          companyName: contact.company_name || '',
+          jobTitle: contact.job_title || '',
+          phone: contact.phone || '',
+          website: contact.website || ''
+        }));
+
+        onLeadsChange(campaignLeads);
+        
+        // Show success message
+        const selectedList = contactLists.find(list => list.id === listId);
+        console.log(`✅ Loaded ${campaignLeads.length} leads from "${selectedList?.name}"`);
+        
+      } else {
+        setErrors([result.message || 'Failed to load contacts from list']);
+      }
+    } catch (error) {
+      console.error('Load contacts error:', error);
+      setErrors(['Failed to load contacts. Please check your connection.']);
+    } finally {
+      setIsLoadingLeads(false);
+    }
+  };
+
+  // Load contact lists when contact_lists method is selected
+  useEffect(() => {
+    if (importMethod === 'contact_lists' && contactLists.length === 0) {
+      fetchContactLists();
+    }
+  }, [importMethod]);
 
   // Add custom field functionality
   const addCustomField = () => {
@@ -350,6 +465,17 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
           >
             <UserPlusIcon className="h-4 w-4 inline mr-2" />
             Add Manually
+          </button>
+          <button
+            onClick={() => setImportMethod('contact_lists')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              importMethod === 'contact_lists'
+                ? 'bg-gray-900 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <ListBulletIcon className="h-4 w-4 inline mr-2" />
+            From Saved Lists
           </button>
         </div>
       )}
@@ -603,6 +729,94 @@ const CampaignLeadImport: React.FC<CampaignLeadImportProps> = ({ leads, onLeadsC
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Contact Lists Method */}
+      {importMethod === 'contact_lists' && (
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900">Select a Contact List</h3>
+            <p className="text-gray-500 mt-1">
+              Choose from your saved contact lists to import leads into this campaign
+            </p>
+          </div>
+
+          {isLoadingLists ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-600">Loading contact lists...</span>
+            </div>
+          ) : contactLists.length === 0 ? (
+            <div className="text-center py-12 border border-gray-200 rounded-lg">
+              <ListBulletIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Contact Lists Found</h3>
+              <p className="text-gray-600 mb-4">
+                You haven't created any contact lists yet. 
+              </p>
+              <p className="text-sm text-gray-500">
+                Use the Advanced People Search to find prospects and save them as contact lists.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {contactLists.map((list) => (
+                  <div 
+                    key={list.id}
+                    className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
+                      selectedContactList === list.id 
+                        ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setSelectedContactList(list.id)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900 mb-1">{list.name}</h4>
+                        {list.description && (
+                          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{list.description}</p>
+                        )}
+                        <div className="flex items-center text-sm text-gray-500 space-x-4">
+                          <div className="flex items-center">
+                            <UsersIcon className="h-4 w-4 mr-1" />
+                            <span>{list.total_contacts || 0} contacts</span>
+                          </div>
+                          <span>•</span>
+                          <span>{new Date(list.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      {selectedContactList === list.id && (
+                        <CheckCircleIcon className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {selectedContactList && (
+                <div className="flex justify-center pt-4">
+                  <button
+                    onClick={() => loadLeadsFromContactList(selectedContactList)}
+                    disabled={isLoadingLeads}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center"
+                  >
+                    {isLoadingLeads ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Loading Leads...
+                      </>
+                    ) : (
+                      <>
+                        <ArrowRightIcon className="h-4 w-4 mr-2" />
+                        Import from Selected List
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
