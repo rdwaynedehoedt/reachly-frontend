@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Reachly - Email Marketing Made Simple",
   description: "Professional email marketing platform for sales teams and marketers",
+  icons: {
+    icon: '/icon.png',
+  },
 };
 
 export default function RootLayout({
